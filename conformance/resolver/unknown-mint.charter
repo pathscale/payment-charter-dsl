@@ -1,0 +1,11 @@
+# expect: E402
+# S7 fails closed. "Never seen" and "fine" must not produce the same outcome.
+charter unknown-mint version 1
+resolver common@41
+timezone UTC
+
+  asset USDC_circle = mint://USDC/Circle/9zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day

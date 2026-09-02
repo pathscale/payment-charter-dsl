@@ -1,0 +1,12 @@
+# expect: E404
+# S11: a unit limit must deny when the rate is stale, which requires there to
+# be a rate. The common tier lists no source for USD.
+charter unit-no-rate version 1
+resolver common@41
+timezone UTC
+
+  asset USD_iso4217 = unit://USD/ISO4217
+
+  limit spend
+    amount 100.00 USD_iso4217
+    per fixed day

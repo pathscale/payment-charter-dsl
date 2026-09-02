@@ -1,0 +1,13 @@
+# expect: E406
+# A revoked mint always stops the charters that name it. Revocation is how the
+# resolver says "this turned out to be something else", so it is not absorbed
+# quietly.
+charter revoked version 1
+resolver common@41
+timezone UTC
+
+  asset STSOL_lido = mint://STSOL/Lido/7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 STSOL_lido
+    per fixed day

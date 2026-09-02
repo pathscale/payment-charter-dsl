@@ -1,0 +1,12 @@
+# Every segment agrees with the common tier, so this compiles. The reference
+# carries the author's belief about symbol and issuer, and S7 confirms it —
+# which is why a bare address would be worse: it can only be wrong silently.
+charter verified version 1
+resolver common@41
+timezone UTC
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day

@@ -1,0 +1,114 @@
+{
+  "tier": "common",
+  "version": 41,
+  "description": "The `common` resolver tier: the assets nearly every charter references. It ships with the client and is cached, so the ordinary charter compiles with no round trip (spec §2.10.7). This file is a fixture for the conformance corpus — a real deployment's resolver is a service, and this is the shape it serves.",
+  "notes": [
+    "`issuer` comes from curation and never from on-chain metadata (S10). Token metadata is self-asserted, so an issuer copied from it is worthless as a discriminator — and the issuer segment is what separates native from bridged.",
+    "`decimals` is the sole authority for money conversion (§2.6). More than nine makes an asset unusable (E223).",
+    "A `common` entry must be identical to the `full` entry for the same mint (S13); where they disagree, both fail closed for that mint."
+  ],
+  "mints": [
+    {
+      "chain": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "mint_id": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "symbol": "USDC",
+      "issuer": "Circle",
+      "decimals": 6,
+      "class": "fiat_reserve",
+      "token_program": "spl-token",
+      "status": "active",
+      "since_version": 1
+    },
+    {
+      "chain": "eip155:1",
+      "mint_id": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "symbol": "USDC",
+      "issuer": "Circle",
+      "decimals": 6,
+      "class": "fiat_reserve",
+      "token_program": "erc20",
+      "status": "active",
+      "since_version": 1
+    },
+    {
+      "chain": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "mint_id": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      "symbol": "USDT",
+      "issuer": "Tether",
+      "decimals": 6,
+      "class": "fiat_reserve",
+      "token_program": "spl-token",
+      "status": "active",
+      "since_version": 1
+    },
+    {
+      "chain": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "mint_id": "A9mUU4qviSctJVPJdBJWkb28deg915LYJKrzQ19ji3FM",
+      "symbol": "USDC",
+      "issuer": "Wormhole",
+      "decimals": 6,
+      "class": "fiat_reserve",
+      "token_program": "spl-token",
+      "status": "active",
+      "since_version": 1,
+      "note": "Bridged. Same symbol as Circle's and a different issuer, which is why the issuer segment is the equivalence key for an asset group (S22): this is a different credit risk that happens to share a ticker."
+    },
+    {
+      "chain": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "mint_id": "So11111111111111111111111111111111111111112",
+      "symbol": "SOL",
+      "issuer": "Solana",
+      "decimals": 9,
+      "class": "algorithmic",
+      "token_program": "spl-token",
+      "status": "active",
+      "since_version": 1,
+      "note": "Nine decimals is the cap (§2.6), so this is the widest scale the language accepts."
+    },
+    {
+      "chain": "eip155:1",
+      "mint_id": "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "symbol": "DAI",
+      "issuer": "MakerDAO",
+      "decimals": 18,
+      "class": "over_collateralised",
+      "token_program": "erc20",
+      "status": "active",
+      "since_version": 1,
+      "note": "Eighteen decimals, so E223 refuses it. Present deliberately: the resolver knows the asset and the language declines to bound it, which is the honest outcome rather than a lookup failure."
+    },
+    {
+      "chain": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "mint_id": "7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj",
+      "symbol": "STSOL",
+      "issuer": "Lido",
+      "decimals": 9,
+      "class": "algorithmic",
+      "token_program": "spl-token",
+      "status": "revoked",
+      "since_version": 38,
+      "note": "Revoked. A revoked mint always stops the charters that name it (E406): revocation is the mechanism for \"this turned out to be something else\", so it must not be absorbed quietly."
+    },
+    {
+      "chain": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+      "mint_id": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "symbol": "USDC",
+      "issuer": "Circle",
+      "decimals": 6,
+      "class": "fiat_reserve",
+      "token_program": "spl-token",
+      "status": "active",
+      "since_version": 1,
+      "note": "Devnet. The genesis identity differs, so a devnet charter fails S7 on mainnet and vice versa — which is what makes rehearsal structurally safe rather than merely conventional."
+    }
+  ],
+  "units": [
+    {
+      "code": "USD",
+      "authority": "ISO4217",
+      "decimals": 2,
+      "rate_sources": [],
+      "note": "A unit:// limit must declare a rate source and a staleness bound and must deny when the rate is stale (S11). No source is listed here, so a charter using it for a non-USD payment fails E404 rather than assuming 1:1."
+    }
+  ]
+}

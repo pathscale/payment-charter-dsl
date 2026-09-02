@@ -1,0 +1,12 @@
+# expect: E405
+# S12: the charter pins a resolver version this resolver cannot satisfy. A
+# resolver that does not yet know what the author saw is not a later version.
+charter future-pin version 1
+resolver common@99
+timezone UTC
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day

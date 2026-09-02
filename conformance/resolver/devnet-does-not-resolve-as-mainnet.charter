@@ -1,0 +1,13 @@
+# expect: E402
+# The devnet mint under the mainnet genesis. The chain identity differs, so a
+# devnet charter fails on mainnet and vice versa — which is what makes
+# rehearsal structurally safe rather than merely conventional.
+charter wrong-network version 1
+resolver common@41
+timezone UTC
+
+  asset USDC_circle = mint://USDC/Circle/4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day

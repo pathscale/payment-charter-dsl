@@ -1,0 +1,12 @@
+# expect: E401
+# S7 again, on the segment that separates native from bridged. The resolver
+# records this mint as Circle's; the reference claims Wormhole bridged it.
+charter lying-issuer version 1
+resolver common@41
+timezone UTC
+
+  asset USDC_wormhole = mint://USDC/Wormhole/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDC_wormhole
+    per fixed day

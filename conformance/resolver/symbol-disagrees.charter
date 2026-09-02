@@ -1,0 +1,12 @@
+# expect: E401
+# S7 verifies every segment against the pinned resolver and names the one that
+# disagrees. This mint is Circle's USDC; the reference calls it USDT.
+charter lying-symbol version 1
+resolver common@41
+timezone UTC
+
+  asset USDT_circle = mint://USDT/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDT_circle
+    per fixed day
