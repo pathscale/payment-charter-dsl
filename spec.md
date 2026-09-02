@@ -30,13 +30,51 @@ without loss of anything semantic. Comments, whitespace and declaration order ar
 semantic and MAY be lost.
 
 An implementation MAY provide only one direction. The backend MUST accept both. A browser
-client builds JSON and MUST be able to emit text (§1.1) so a controller can read and diff what
+client builds JSON and MUST be able to emit text (§1.2) so a controller can read and diff what
 they are authorising; it need not parse text.
 
 **Compilation** turns either form into the *compiled form* (§9), which is what the engine
 evaluates. A document that does not compile is not a charter.
 
-### 1.1 Canonical text form
+### 1.1 The JSON form
+
+The wire form is a JSON object. Its shape mirrors the grammar of §3 one-for-one — a
+`declarations` array of tagged objects, each carrying the fields its production carries — and
+the machine-readable schema is [`charter.schema.json`](charter.schema.json), which is normative
+alongside this section.
+
+Three rules constrain the encoding, and the first is not a style preference.
+
+**Every number that can exceed 2^53 is a decimal string, never a JSON number.** That covers
+money in every position — base, exception, escalation ceiling — and any minor-unit value in the
+compiled form.
+
+> JSON numbers are IEEE-754 doubles wherever JavaScript reads them, and JCS (RFC 8785), which
+> §12 signs over, defines number serialisation in exactly those terms. Integers above 2^53
+> (`9007199254740992`) do not survive the round trip.
+>
+> §2.6's nine-decimal cap keeps money inside `u64`, and it does not keep it inside 2^53: a
+> nine-decimal asset crosses at about nine million tokens. That is a limit somebody will write.
+>
+> The rule is a string because the rule is then one sentence. As a number it would be "a JSON
+> number, except above nine million tokens of a nine-decimal asset, or nine billion of a
+> six-decimal one" — a cliff whose position depends on the asset, in the one field where a
+> silent wrong answer is a wrong payment.
+>
+> `count`, `version`, `quorum`, durations and epoch seconds stay JSON numbers: each is bounded
+> far below 2^53 by its own rule, and a value that cannot reach the cliff does not need the
+> ceremony.
+
+**Money strings carry the digits the author wrote**, not minor units: `"100.00"`, not
+`"100000000"`. The scale is the asset's, the asset is named beside it, and a reader diffing the
+JSON sees what the text says. Minor-unit conversion happens at compile time, where the resolver
+supplies `decimals` (§2.6).
+
+**Declaration order is not semantic and is not preserved.** A JSON form MUST be emitted in
+§1.2's canonical declaration order, so that text→JSON→text is byte-stable through both
+directions rather than only through the text one.
+
+### 1.2 Canonical text form
 
 Semantic isomorphism is not enough to test an emitter against. Two emitters can agree on every
 meaning and still disagree on every character a human reads, and "semantically identical" is not
@@ -159,7 +197,7 @@ reported as attaching to the declaration it actually attached to. Layout stays m
 the language and becomes evidence of intent to the diagnostic, which is the only place it can
 help without becoming a second grammar.
 
-**Round-tripping shows the truth.** §1.1's canonical form re-emits every clause at the
+**Round-tripping shows the truth.** §1.2's canonical form re-emits every clause at the
 indentation its parse implies, so passing a charter through the emitter relocates the misplaced
 `escalate` under `daily` where it actually lives. A controller reviewing canonical output is
 reviewing the parse rather than their own typing, and any authoring tool SHOULD show them that
@@ -249,7 +287,7 @@ This is a deliberate and permanent property, not an omission awaiting a string t
 where parsers disagree, and two implementations of this specification disagreeing about what a
 document says is the failure mode §11 exists to prevent. It also removes, at a stroke,
 homoglyph and encoding tricks against S19 — a name cannot smuggle a `A` past a byte
-comparison that never decodes anything — and it is what lets §1.1's canonical form be compared
+comparison that never decodes anything — and it is what lets §1.2's canonical form be compared
 byte-for-byte rather than after normalisation.
 
 A consequence to state rather than leave to be found: **`symbol` admits `.` and `-` (§2.10.1)
@@ -285,15 +323,52 @@ as given by the resolver (E202).
 A money literal names the alias and **never repeats the reference**. Inlining a full reference at
 every use site looks like more explicitness and is less: a charter mentioning one asset twelve
 times would carry twelve independently mistypeable copies of a 90-character string, every line
-would exceed any reviewable width — §1.1 forbids wrapping — and a diff in which exactly one of
+would exceed any reviewable width — §1.2 forbids wrapping — and a diff in which exactly one of
 the twelve changed is precisely the change a reviewer would miss. One binding, checked once
 against the resolver, referenced by a name that S19 and S20 stop from lying, puts the
 explicitness where it can be verified instead of where it can be skimmed.
 
 A money literal denotes an exact integer count of the asset's minor units:
 `value × 10^decimals`. The conversion MUST be exact — a literal that cannot be represented
-exactly in minor units is an error, never a rounding (E202). The result MUST fit in an unsigned
-64-bit integer (E203).
+exactly in minor units is an error, never a rounding (E202). The result, and every accumulated
+total over it, MUST fit in an unsigned 64-bit integer (E203).
+
+**An asset whose resolver record reports more than 9 decimals is not usable in a charter**
+(E223). A compiler MUST refuse it. It MUST NOT truncate, and MUST NOT accept it with a warning.
+
+> **This cap is what makes `u64` sufficient, and the two decisions are one decision.**
+>
+> `u64::MAX` is about 1.845 × 10^19, and minor units are `value × 10^decimals`, so the largest
+> expressible amount is that divided by `10^decimals`:
+>
+> | decimals | example | largest amount |
+> |---|---|---|
+> | 2 | `unit://USD` | 184,467,440,737,095,516 |
+> | 6 | USDC, USDT | 18,446,744,073,709 |
+> | 9 | SOL and most SPL tokens | 18,446,744,073 |
+> | 18 | DAI, WETH, most of ERC-20 | **18.44 tokens** |
+> | 24 | some newer tokens | 0.0000184 tokens |
+>
+> Without a cap, `limit monthly amount 500.00 DAI_maker` is an overflow error: an ordinary
+> monthly budget in a dollar stablecoin, refused by arithmetic rather than by any rule anyone
+> wrote. Widening to `u128` would have made that work and would have bought the language a
+> second problem — a bound whose headroom depends on a resolver fact this document does not
+> control, restated one register wider.
+>
+> Capping instead is the smaller thing to specify and the honest one. **Nine decimals is more
+> precision than a payment has ever needed**; eighteen is an artefact of `wei`, not a
+> requirement of money. At nine the cap leaves eighteen billion whole tokens expressible, which
+> no spending limit approaches.
+>
+> **State the consequence plainly: this excludes DAI, WETH and most ERC-20 tokens.** It does not
+> exclude `eip155` — USDC and USDT are six decimals on Ethereum as on Solana, so the
+> cross-chain asset group of §S22 is unaffected. An asset the language cannot bound is one it
+> refuses to pretend to bound.
+>
+> Truncation is not an available alternative, and not because of taste. E202 already says a
+> literal that cannot be represented exactly is an error and never a rounding. A warn-and-round
+> path for high-decimal assets would contradict a rule this language already enforces on every
+> other amount.
 
 There are no negative amounts. `0` is a valid amount.
 
@@ -1580,6 +1655,7 @@ E2xx literal    201 unknown asset name            202 fractional digits exceed d
                 217 unknown instrument name        218 malformed instrument reference
                 219 no limit applies to this request
                 220 credential in an instrument reference
+                223 asset decimals exceed nine
                 221 identifier declared as the wrong kind for its position
                 222 asset group name lacks _group, or an asset name carries it
 E3xx structure  301 operator not valid for field  302 heterogeneous group
@@ -1623,7 +1699,7 @@ An implementation is conforming if it agrees on every case in the suite.
 conformance/
   parse/accept/*.charter         parse and compile cleanly
   parse/reject/*.charter         leading comment block: # expect: E304
-  roundtrip/*.charter            text → JSON → text, byte-identical in canonical form (§1.1)
+  roundtrip/*.charter            text → JSON → text, byte-identical in canonical form (§1.2)
   canonical/*.charter            + expected compiled bytes
   eval/*.json                    charter + request sequence → expected decisions
   asset-ref/                     the mint:// and unit:// sub-parser, on its own
@@ -1640,7 +1716,7 @@ a fixture copied from or derived from an upstream suite carries a provenance hea
 MUST scan that whole block for `# expect:` rather than reading line one. A fixture with no
 `# expect:` in its leading block is a malformed fixture, not a wildcard.
 
-`roundtrip/` is a **byte comparison** against the canonical text form of §1.1, not a semantic
+`roundtrip/` is a **byte comparison** against the canonical text form of §1.2, not a semantic
 one. Two emitters that agree semantically and disagree on layout are two emitters that will
 drift.
 
@@ -1707,7 +1783,7 @@ object (§12.3), so nothing here needs to be legible to a person.
 
 Two digests, and the reason for each is the reason this design is not obvious.
 
-**`text_digest` covers the canonical text form (§1.1).** It is the only field that binds the
+**`text_digest` covers the canonical text form (§1.2).** It is the only field that binds the
 signature to something a human read. A controller reviews text; if the signature covered JSON
 alone they would be attesting to bytes they never saw, in a different notation, which is
 precisely the display-one-sign-another gap this system exists to close for payments. Applying

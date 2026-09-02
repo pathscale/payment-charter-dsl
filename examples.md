@@ -718,7 +718,7 @@ For `conformance/eval/`. Each is a charter plus a request sequence plus expected
 
 ## 8 · The canonical text form
 
-§1.1 of the specification defines exactly one canonical rendering of a charter, and
+§1.2 of the specification defines exactly one canonical rendering of a charter, and
 `roundtrip/` conformance is a byte comparison against it. The example in §4 of the spec is
 formatted for reading — aligned `=`, declarations in the author's order. This is the same
 charter as an emitter MUST produce it.

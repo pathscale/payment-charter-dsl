@@ -9,7 +9,7 @@ against this directory rather than against their own tests.
 conformance/
   parse/accept/*.charter    compiles cleanly
   parse/reject/*.charter    leading comment block carries `# expect: E304`
-  roundtrip/*.charter       text → JSON → text, byte-identical in canonical form (§1.1)
+  roundtrip/*.charter       text → JSON → text, byte-identical in canonical form (§1.2)
   canonical/*.charter       + expected compiled bytes
   eval/*.json               charter + request sequence → expected decisions
   asset-ref/                the mint:// and unit:// sub-parser, on its own
