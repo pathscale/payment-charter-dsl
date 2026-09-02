@@ -86,7 +86,7 @@ resolver common@41
   limit daily_spend
     amount 500.00 USDC_circle
       except 5000.00 USDC_circle when counterparty in trusted_suppliers
-    per fixed day in Europe/London
+    per fixed day in UTC+00:00
     scope agent
     above 200.00 USDC_circle require 2 of finance
 
@@ -97,7 +97,7 @@ resolver common@41
 
   limit transaction_count
     count 20
-    per fixed day in Europe/London
+    per fixed day in UTC+00:00
     scope agent
 
   limit untrusted_counterparty

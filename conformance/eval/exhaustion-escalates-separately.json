@@ -1,7 +1,8 @@
 {
   "description": "Exhaustion and threshold are different questions. A small payment in an exhausted month escalates on the trigger the amount never reaches.",
   "charter": "parse/accept/petty-cash-at-least.charter",
-  "clock": "2026-09-01T09:00:00-04:00",
+  "clock": 1788606000,
+  "clock_note": "2026-09-01 09:00 at UTC-05:00",
   "requests": [
     { "amount": "45.00", "asset": "USDC", "agent": "a1", "expect": "allow" },
     { "amount": "45.00", "asset": "USDC", "agent": "a1", "expect": "allow",

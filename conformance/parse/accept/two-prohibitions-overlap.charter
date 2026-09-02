@@ -1,7 +1,7 @@
 # Two prohibitions may overlap each other. Both hold; the union refuses (H6).
 charter double-prohibit version 1
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 

@@ -3,7 +3,7 @@
 # and S7 passes; the only thing wrong is the word a reviewer reads.
 charter lying-alias version 1
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = mint://USDT/Tether/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 

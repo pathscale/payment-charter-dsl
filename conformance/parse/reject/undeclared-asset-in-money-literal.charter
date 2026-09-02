@@ -3,7 +3,7 @@
 # resolver's common tier knows it; neither of those declares it here.
 charter no-declaration version 1
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 
   limit spend
     amount 100.00 USDC_circle

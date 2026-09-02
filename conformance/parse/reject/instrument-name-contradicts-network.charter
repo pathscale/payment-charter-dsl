@@ -2,7 +2,7 @@
 # S27: S19's lie with a card in place of a mint.
 charter lying-instrument version 1
 resolver full@41
-timezone America/New_York
+timezone UTC-05:00
 
   asset USD_iso4217 = unit://USD/ISO4217
 

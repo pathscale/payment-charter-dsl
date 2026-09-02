@@ -3,7 +3,7 @@
 # ticker, which is the thing this language refuses to treat as a control.
 charter bare-ticker version 1
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 

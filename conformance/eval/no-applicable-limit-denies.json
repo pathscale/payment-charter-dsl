@@ -1,7 +1,8 @@
 {
   "description": "S24 - a request matching no limit is denied. This is what makes the for clause safe.",
   "charter": "parse/accept/instruments-per-card-caps.charter",
-  "clock": "2026-09-01T09:00:00-04:00",
+  "clock": 1788606000,
+  "clock_note": "2026-09-01 09:00 at UTC-05:00",
   "requests": [
     { "amount": "40.00", "asset": "USD_iso4217", "instrument": "mastercard_token", "expect": "allow" },
     { "amount": "20.00", "asset": "USD_iso4217", "instrument": "mastercard_token", "expect": "deny",

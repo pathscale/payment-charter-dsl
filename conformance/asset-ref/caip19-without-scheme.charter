@@ -2,7 +2,7 @@
 # caip19-with-scheme.charter as identical.
 charter caip19-input version 1
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 

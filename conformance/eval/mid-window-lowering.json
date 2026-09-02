@@ -1,19 +1,20 @@
 {
   "description": "An edit changes the ceiling, never the meter. Lowering a limit mid-window must never increase what can be spent.",
   "charter": "parse/accept/petty-cash-at-least.charter",
-  "clock": "2026-09-01T09:00:00-04:00",
+  "clock": 1788606000,
+  "clock_note": "2026-09-01 09:00 at UTC-05:00",
   "requests": [
     { "amount": "40.00", "asset": "USDC", "agent": "a1", "expect": "allow" },
     { "amount": "40.00", "asset": "USDC", "agent": "a1", "expect": "allow",
       "note": "80.00 reserved of 100.00, September" },
     { "install": { "charter": "assistant", "version": 2, "petty_cash_amount": "50.00" },
-      "at": "2026-09-14T12:00:00-04:00",
+      "at": 1789732800,
       "note": "8.4A - same limit id, same window spec, so the accumulator carries" },
     { "amount": "1.00", "asset": "USDC", "agent": "a1", "expect": "escalate",
       "escalation": { "limit": "petty_cash", "trigger": "when exhausted" },
       "note": "80.00 already reserved against a 50.00 ceiling. Restarting the window here would have permitted 130.00 in a month capped first at 100 and then at 50." },
     { "amount": "1.00", "asset": "USDC", "agent": "a1", "expect": "allow",
-      "at": "2026-10-01T00:00:01-04:00",
+      "at": 1790812801,
       "note": "October is a new window instance; the meter is new because the month is, not because the charter changed" }
   ]
 }

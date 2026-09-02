@@ -2,7 +2,7 @@
 # S22: a group of one is an alias wearing a second name.
 charter degenerate-group version 1
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 

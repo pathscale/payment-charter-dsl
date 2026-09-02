@@ -12,7 +12,7 @@ needs my approval."*
 ```
 charter assistant version 1
 resolver common@41
-timezone America/New_York
+timezone UTC-05:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -20,7 +20,7 @@ timezone America/New_York
 
   limit petty_cash
     amount 100.00 USDC_circle
-    per fixed month in America/New_York
+    per fixed month in UTC-05:00
     scope agent
     escalate at least 50.00 USDC_circle require 1 of owner up to 2000.00 USDC_circle within 3 days
     escalate when exhausted require 1 of owner up to 2000.00 USDC_circle within 3 days

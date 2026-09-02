@@ -1,7 +1,8 @@
 {
   "description": "A million-dollar authority is fine when the number is a literal and the large path needs two humans.",
   "charter": "parse/accept/instruments-per-card-caps.charter",
-  "clock": "2026-09-01T09:00:00-04:00",
+  "clock": 1788606000,
+  "clock_note": "2026-09-01 09:00 at UTC-05:00",
   "requests": [
     { "amount": "4999.99", "asset": "USD_iso4217", "instrument": "visa_gold", "expect": "allow",
       "note": "below the threshold, autonomous" },

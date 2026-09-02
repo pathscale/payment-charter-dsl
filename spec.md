@@ -321,15 +321,39 @@ It denotes a local calendar date in the charter's timezone (§5.4), not an insta
 ### 2.9 Timezones
 
 ```
-tz = "UTC" | tz-name ;
-tz-name = tz-part { "/" tz-part } ;
-tz-part = ( ALPHA | DIGIT ) { ALPHA | DIGIT | "_" | "+" | "-" } ;
+tz     = "UTC" [ offset ] ;
+offset = ( "+" | "-" ) 2DIGIT ":" 2DIGIT ;
 ```
 
-MUST be a name present in the IANA time zone database (E206). Implementations MUST agree on a
-tzdata version, which the compiled form records (§9). Aliases MUST NOT be silently
-canonicalised: a charter naming a link that later retargets is a change of meaning, so the name
-is recorded as written and resolved at compile time.
+`UTC`, `UTC+10:00`, `UTC-05:00`. The offset MUST lie in `-12:00 ..= +14:00` and its minutes MUST
+be `00`, `15`, `30` or `45` (E206). Bare `UTC` means `UTC+00:00`.
+
+**There are no IANA zone names, and no daylight saving.** A window boundary is arithmetic on a
+fixed offset, and it means the same thing in 2040 as it does today.
+
+> An earlier draft took IANA names, and it was wrong three times over.
+>
+> **It put a database in the enclave.** `pays-policy` is dependency-free precisely so the
+> enclave can link it, and tzdata is not a small blob to carry there or a comfortable one to
+> update inside an attested boundary.
+>
+> **It let a signed charter change meaning without changing.** §12 signs a charter. Governments
+> change DST rules; a tzdata update then moves the window boundaries of a document already
+> signed and already deployed. The signature still verifies, and the charter now means something
+> its controller never approved. That is the exact failure the whole authenticity section exists
+> to prevent, arriving through a dependency rather than through an attacker. The earlier draft
+> was uneasy enough about this to forbid silently canonicalising aliases; the real answer was to
+> stop depending on the database.
+>
+> **It bought a class of edge cases for a benefit spending limits do not need.** Ambiguous local
+> times, nonexistent local times, 23- and 25-hour days, and a conformance vector for each — all
+> to keep a budget period aligned to local midnight through a clock change. A window is an
+> accounting period, not an appointment. A controller at `UTC+01:00` whose daily window rolls at
+> midnight standard time all year has lost nothing they can name.
+>
+> The cost is real and small: a charter in a DST region is offset by an hour from local midnight
+> for part of the year. It is stated here rather than hidden, and it is predictable, which is
+> more than the alternative offered.
 
 ### 2.10 Asset references
 
@@ -581,7 +605,7 @@ override. A parser MUST NOT rely on evaluation order for meaning (§8.2.2).
 ```
 charter acme-treasury version 7
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -594,7 +618,7 @@ timezone Europe/London
   limit daily_spend
     amount 500.00 USDC_circle
       except 5000.00 USDC_circle when counterparty in trusted_suppliers
-    per fixed day in Europe/London
+    per fixed day in UTC+00:00
     scope agent
     escalate above 200.00 USDC_circle  require 2 of finance up to 5000.00 USDC_circle within 1 days
     escalate when exhausted     require 2 of finance up to 5000.00 USDC_circle within 1 days
@@ -606,7 +630,7 @@ timezone Europe/London
 
   limit transaction_count
     count 20
-    per fixed day in Europe/London
+    per fixed day in UTC+00:00
     scope agent
 
   limit untrusted_counterparty
@@ -1246,9 +1270,14 @@ default of 1 day; on expiry the reservation is released and the request is denie
 **8.1.6 · A payment belongs to the window in which it was reserved**, not the one in which it
 settled.
 
-**8.1.7 · Fixed windows** align to local midnight in the window's timezone. Under a DST
-transition an ambiguous local time resolves to its **first** occurrence and a nonexistent one to
-the instant the offset changes; a 23-hour and a 25-hour day each receive one allowance.
+**8.1.7 · Fixed windows** align to midnight at the window's UTC offset (§2.9). A `day` boundary
+is the instant at which `utc_seconds + offset_seconds` crosses a multiple of 86400; `week`,
+`month` and `year` are the calendar boundaries of the date so computed.
+
+Every day is 24 hours, every boundary is one subtraction and one division, and every
+implementation gets the same answer without consulting anything. There is no ambiguous local
+time, no nonexistent local time, and no 23- or 25-hour day, because there is no daylight saving
+to produce them (§2.9).
 
 ### 8.2 Evaluating a request
 
@@ -1414,7 +1443,7 @@ no defined composition.
 charter dept-a version 3
 extends company-wide@7
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 ```
 
 The parent pin is a version, not a name alone. A parent that changes is subject to the same
@@ -1489,7 +1518,7 @@ prohibition_id · selector_program
 and per document a header:
 
 ```
-charter_id · version · resolver_tier · resolver_version · tzdata_version
+charter_id · version · resolver_tier · resolver_version
          · timezone · resolved_assets[] · asset_groups[] · instruments[]
          · prohibitions[] · ceiling_document
 ```
@@ -1526,7 +1555,8 @@ no recursion, and bounded depth. `ceiling_static` is the S5 maximum, recorded pe
 (autonomous, escalated) so the invariant check reads it rather than recomputing it.
 
 The compiled form MUST be canonical: the same document compiles to byte-identical output under
-the same resolver and tzdata versions. This is what makes a decision reproducible in a dispute.
+the same resolver version. This is what makes a decision reproducible in a dispute, and it is
+one version rather than two because §2.9 removed the other one.
 
 ## 10 · Errors
 
@@ -1616,8 +1646,9 @@ drift.
 
 `eval` vectors MUST include: the 101st unit against a 100-unit allowance escalating rather than
 failing; a reservation released on blockhash expiry and not on a timer; a `count` not released
-on failure; a payment reserved before and settling after a window boundary; a DST transition in
-both directions; a request exactly equal to an `at least` threshold and the same request against
+on failure; a payment reserved before and settling after a window boundary; a fixed window at a
+non-zero offset, at a negative offset, and at a quarter-hour offset such as `UTC+05:45`; a
+request exactly equal to an `at least` threshold and the same request against
 an `above` one; a prohibited request consuming no accumulator and being offered no quorum; a
 limit lowered mid-window; and a limit renamed mid-window.
 
@@ -1659,13 +1690,22 @@ Not the charter. A **commitment**:
   "text_digest":   "sha256:…",
   "compiled_digest": "sha256:…",
   "key_id":        "…",
-  "not_before":    "2026-09-02T00:00:00Z",
-  "not_after":     "2027-09-02T00:00:00Z"
+  "not_before":    1788307200,
+  "not_after":     1819843200
 }
 ```
 
-Serialised with JCS (RFC 8785) and signed. Two digests, and the reason for each is the reason
-this design is not obvious.
+Serialised with JCS (RFC 8785) and signed.
+
+`not_before` and `not_after` are **Unix epoch seconds, UTC**, not formatted timestamps. The
+enclave verifies this payload, so a formatted timestamp would put a date parser inside
+`pays-policy` — and a date format has more than one spelling of the same instant (`Z`,
+`+00:00`, `-00:00`, fractional seconds), which means the signed bytes need a second
+canonicalisation rule nested inside JCS. An integer has one spelling, JCS already says how to
+serialise it, and comparing it is a comparison. The controller reads the charter text, not this
+object (§12.3), so nothing here needs to be legible to a person.
+
+Two digests, and the reason for each is the reason this design is not obvious.
 
 **`text_digest` covers the canonical text form (§1.1).** It is the only field that binds the
 signature to something a human read. A controller reviews text; if the signature covered JSON

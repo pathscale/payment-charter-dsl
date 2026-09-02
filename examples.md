@@ -13,7 +13,7 @@ into `conformance/` rather than paraphrased.
 ```
 charter solo version 1
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -22,7 +22,7 @@ timezone Europe/London
     per fixed day
 ```
 
-Static ceiling: 100.00 USDC_circle per calendar day, Europe/London. No scope, so one accumulator for
+Static ceiling: 100.00 USDC_circle per calendar day, UTC+00:00. No scope, so one accumulator for
 everything. No escalation, so exhaustion denies.
 
 ---
@@ -39,7 +39,7 @@ stated.**
 ```
 charter household version 4
 resolver common@41
-timezone America/New_York
+timezone UTC-05:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -146,7 +146,7 @@ needs my approval."*
 ```
 charter assistant version 1
 resolver common@41
-timezone America/New_York
+timezone UTC-05:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -154,7 +154,7 @@ timezone America/New_York
 
   limit petty_cash
     amount 100.00 USDC_circle
-    per fixed month in America/New_York
+    per fixed month in UTC-05:00
     scope agent
     escalate at least 50.00 USDC_circle require 1 of owner up to 2000.00 USDC_circle within 3 days
     escalate when exhausted require 1 of owner up to 2000.00 USDC_circle within 3 days
@@ -328,7 +328,7 @@ assets, which is what the `for` clause is for.
 ```
 charter corporate-cards version 1
 resolver full@41
-timezone America/New_York
+timezone UTC-05:00
 
   asset USD_iso4217 = unit://USD/ISO4217
 
@@ -424,7 +424,7 @@ Four documents, one chain. Each extends exactly one parent (E312 forbids two).
 ```
 charter company-wide version 7
 resolver full@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -452,7 +452,7 @@ Static maximum: **400000.00** on the escalated path, 250000.00 autonomous. Both 
 charter dept-eng version 3
 extends company-wide@7
 resolver full@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -475,7 +475,7 @@ company's 250000 — H1 takes the minimum, so a cloud payment faces min(60000, 2
 charter manager-alice version 2
 extends dept-eng@3
 resolver full@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -499,7 +499,7 @@ agents' payments also draws down `dept_monthly` and `company_monthly`.
 charter agent-buildbot version 11
 extends manager-alice@2
 resolver full@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -726,7 +726,7 @@ charter as an emitter MUST produce it.
 ```
 charter acme-treasury version 7
 resolver common@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
@@ -745,14 +745,14 @@ timezone Europe/London
   limit daily_spend
     amount 500.00 USDC_circle
       except 5000.00 USDC_circle when counterparty in trusted_suppliers
-    per fixed day in Europe/London
+    per fixed day in UTC+00:00
     scope agent
     escalate above 200.00 USDC_circle require 2 of finance up to 5000.00 USDC_circle within 1 days
     escalate when exhausted require 2 of finance up to 5000.00 USDC_circle within 1 days
 
   limit transaction_count
     count 20
-    per fixed day in Europe/London
+    per fixed day in UTC+00:00
     scope agent
 
   limit untrusted_counterparty

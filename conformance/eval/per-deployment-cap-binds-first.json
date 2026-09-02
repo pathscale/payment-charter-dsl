@@ -1,7 +1,7 @@
 {
   "description": "A cap can be right in aggregate and wrong in placement. The member limit refuses while most of the group allowance is untouched.",
   "charter": "parse/accept/group-plus-per-deployment-cap.charter",
-  "clock": "2026-09-01T09:00:00Z",
+  "clock": 1788591600,
   "requests": [
     { "amount": "25.00", "asset": "USDC_ethereum", "expect": "allow",
       "accumulator": { "monthly": "25.00", "ethereum_exposure": "25.00" },

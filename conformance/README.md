@@ -35,7 +35,7 @@ decision each MUST produce:
 {
   "description": "what this vector is for",
   "charter": "parse/accept/petty-cash-at-least.charter",
-  "clock": "2026-09-01T09:00:00-04:00",
+  "clock": 1788606000,
   "requests": [
     { "amount": "50.00", "asset": "USDC", "agent": "a1", "expect": "escalate",
       "escalation": { "limit": "petty_cash", "trigger": "at least" } }

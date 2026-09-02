@@ -2,7 +2,7 @@
 # S21 covers instruments as well as assets. amex_black is named and never declared.
 charter undeclared-instrument version 1
 resolver full@41
-timezone America/New_York
+timezone UTC-05:00
 
   asset USD_iso4217 = unit://USD/ISO4217
 

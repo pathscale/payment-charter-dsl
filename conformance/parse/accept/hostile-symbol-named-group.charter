@@ -4,7 +4,7 @@
 # not an asset-group one. A lexer matching keywords eagerly gets this wrong.
 charter hostile-symbol version 1
 resolver full@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset group_solana = mint://group/Attacker/8b7Rp2VqNzKcF4uYxWtJ3sLmHdGaQ9eZcXvBnMkTyPwR/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 

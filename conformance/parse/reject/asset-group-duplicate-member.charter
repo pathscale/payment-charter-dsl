@@ -1,7 +1,7 @@
 # expect: E214
 charter duplicate-member version 1
 resolver full@41
-timezone Europe/London
+timezone UTC+00:00
 
   asset USDC_ethereum = mint://USDC/Circle/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/eip155:1
   asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp

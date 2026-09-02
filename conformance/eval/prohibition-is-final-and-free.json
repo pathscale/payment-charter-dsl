@@ -1,7 +1,7 @@
 {
   "description": "A prohibition denies outright, offers no quorum, and moves no accumulator - including no count.",
   "charter": "parse/accept/two-prohibitions-overlap.charter",
-  "clock": "2026-09-01T09:00:00Z",
+  "clock": 1788591600,
   "requests": [
     { "amount": "10.00", "asset": "USDC", "category": "country:PRK", "expect": "deny",
       "denied_by": ["by_country"],

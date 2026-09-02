@@ -1,7 +1,7 @@
 # Instruments are identities; every cap is a limit with a for clause (S25).
 charter corporate-cards version 1
 resolver full@41
-timezone America/New_York
+timezone UTC-05:00
 
   asset USD_iso4217 = unit://USD/ISO4217
 
