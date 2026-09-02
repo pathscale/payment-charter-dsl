@@ -65,21 +65,23 @@ line. Then declarations, grouped by kind in this order:
 
 1. `asset`
 2. `asset group`
-3. `group`
-4. `approvers`
-5. `prohibit`
-6. `limit`
+3. `instrument`
+4. `group`
+5. `approvers`
+6. `prohibit`
+7. `limit`
 
 Within each kind, declarations are sorted by identifier, ascending by byte value. Declaration
 order is not semantic (§5), so sorting is what makes the output a function of the meaning rather
 than of the author's typing. A blank line separates one kind from the next, and separates each
-`limit` from the next; consecutive `asset`, `asset group`, `group` and `approvers` declarations
+`limit` from the next; consecutive `asset`, `asset group`, `instrument`, `group` and `approvers`
+declarations
 are not separated.
 
 An `asset group`'s members are emitted in the same sorted-by-identifier order, so a group and
 the declarations it names read in one order throughout the document.
 
-**Within a limit,** clauses appear in grammar order: dimension, its `except` clauses, `per`,
+**Within a limit,** clauses appear in grammar order: dimension, its `except` clauses, `for`, `per`,
 `scope`, then `escalate`. `except` clauses are sorted ascending by byte value of their emitted
 text — S4 forces them disjoint, so their order carries no meaning. `escalate` clauses are sorted
 with threshold triggers first, ascending by threshold, and `when exhausted` last. S17 makes
@@ -132,7 +134,7 @@ instrument  is  least  limit  minute  minutes  month  not  of  or  and
 per   charter require  resolver  rolling  scope  second  seconds  timezone
 to    up  version  week  when  within  year  common  counterparty  before
 after  date  category  provenance  principal  merchant  network
-extends  unlimited  policy  prohibit
+extends  unlimited  policy  prohibit  for
 ```
 
 `policy` is reserved but is not a keyword: it was the opening keyword in an earlier draft, and
@@ -381,17 +383,26 @@ charter        = "charter" ident "version" uint
 
 resolver-tier  = "common" | "full" ;
 
-declaration    = asset-decl | asset-group | group-decl | approvers-decl
-               | prohibit-decl | limit-decl ;
+declaration    = asset-decl | asset-group | instrument-decl | group-decl
+               | approvers-decl | prohibit-decl | limit-decl ;
 
 asset-decl     = "asset" ident "=" ( mint-ref | unit-ref ) ;
 asset-group    = "asset" "group" ident "=" "{" ident { "," ident } [ "," ] "}" ;
+
+instrument-decl = "instrument" ident "=" instrument-ref ;
+instrument-ref  = card-ref | wallet-ref ;
+card-ref        = "card://" network "/" handle ;
+wallet-ref      = "wallet://" caip2 "/" address ;
+network         = LOWER-ALNUM ;                                      (* 2..16 *)
+handle          = ( ALPHA | DIGIT ) { ALPHA | DIGIT | "_" | "-" } ; (* 1..64, opaque *)
 group-decl     = "group" ident "=" "{" literal { "," literal } [ "," ] "}" ;
 approvers-decl = "approvers" ident "=" "{" ident { "," ident } [ "," ] "}" ;
 
 prohibit-decl  = "prohibit" ident "when" condition ;
 
-limit-decl     = "limit" ident dimension window [ scope ] { escalation } ;
+limit-decl     = "limit" ident dimension [ applies ] window [ scope ] { escalation } ;
+
+applies        = "for" condition ;
 
 dimension      = "amount" money { amount-exc }
                | "count"  uint  { count-exc } ;
@@ -510,6 +521,7 @@ Each field admits a fixed set of operators and value shapes. Anything else is a 
 | `category` | `is`, `is not`, `in`, `not in` | `mcc:` or `country:` tagged, or group thereof |
 | `asset` | `is`, `is not`, `in`, `not in` | `asset` or `asset group` ident declared in this document (S21), or set thereof |
 | `asset.class` | `is`, `is not`, `in`, `not in` | class name, or set thereof |
+| `instrument` | `is`, `is not`, `in`, `not in` | `instrument` ident declared in this document (S21), or set thereof |
 | `provenance` | `is`, `is not`, `in`, `not in`, `is at least` | plane, or set of planes |
 | `provenance.recipient` | as `provenance` | as `provenance` |
 | `provenance.amount` | as `provenance` | as `provenance` |
@@ -584,6 +596,24 @@ and MUST be greater than or equal to the base (E306).
 > construct to trust. This is the structural reason prohibition is a declaration and not a value
 > in the ceiling slot: as a value it needed a special case here, in §8.4 and in H6, and three
 > special cases for one production is the language telling you the shape is wrong.
+
+**S5.1 · The document's static maximum over a window, per asset, is the sum of the window
+ceilings of every limit over that asset.** A compiler MUST compute it and emit it (§9).
+
+> Before `for` (S23) every limit applied to every request, so the binding number was the
+> *minimum* and the sum was pessimistic to the point of being useless. With applicability, two
+> limits may cover disjoint ground and their allowances add, so the sum is the honest figure.
+>
+> It is a sound upper bound rather than a tight one: S24 guarantees every authorised request
+> draws at least one limit, so total window exposure cannot exceed the sum of what those limits
+> permit. A request drawing two limits is counted in both, which over-states and never
+> under-states.
+>
+> Emitting it is the point. This is the same arithmetic that turns two hundred-a-month limits on
+> equivalent assets into two hundred a month (W4) and a per-instrument card cap into the total a
+> wallet of cards authorises. A controller who has written six limits is owed the one number
+> they add up to, because that number is the answer to "how much can this thing spend", and it
+> is not any of the six numbers they wrote.
 
 **S6 · A limit's asset is fixed.** Every money literal in one limit — base, exceptions and
 escalation ceilings — MUST name the same declared `asset` or `asset group` (E307). Limits over
@@ -683,10 +713,11 @@ qualifier: `USDC_circle`, `USDC_wormhole`, never bare `USDC`.
 > one is a readability failure, not a safety failure: S7 still pins every segment, and S19 still
 > prevents the name contradicting the symbol.
 
-**S21 · Every asset named in a document MUST be declared in that document** (E201). This holds
-in every position an asset identifier can appear: the identifier of a money literal (§2.6), the
-value of an `asset` comparison, and every member of an inline set over the `asset` field. There
-is no default asset, no implicit asset, and no inference from context.
+**S21 · Every asset and every instrument named in a document MUST be declared in that document**
+(E201 for an asset, E217 for an instrument). This holds in every position such an identifier can
+appear: the identifier of a money literal (§2.6), the value of an `asset` or `instrument`
+comparison, every member of an inline set over either field, and every member of an `asset
+group`. There is no default asset, no default instrument, and no inference from context.
 
 > **The resolver is not a namespace.** `resolver common@41` reads like an import of the assets
 > in the `common` tier, and it is not one. An undeclared `USDC` is E201 even when the resolver
@@ -725,10 +756,60 @@ The group is one asset for the purposes of a limit: one accumulator, one ceiling
 member** (§8.1.1). `amount 100.00 USDC_circle per fixed month` is a hundred dollars a month in
 total, which is what a controller who says "a hundred dollars of USDC a month" means.
 
-**S23 · A limit applies to a request whose settlement asset is the limit's asset, or is a member
-of it when the limit's asset is a group.** Every applicable limit is evaluated and §8.3 joins
-them, so a Solana payment under the declarations above draws both the `USDC_circle` accumulator
-and any accumulator on `USDC_solana` itself.
+**S23 · A limit applies to a request when both hold:** the request's settlement asset is the
+limit's asset — or a member of it, when that asset is a group — **and** the limit's `for`
+condition holds, if it declares one. Every applicable limit is evaluated and §8.3 joins them, so
+a Solana payment under the declarations above draws both the `USDC_circle` accumulator and any
+accumulator on `USDC_solana` itself.
+
+**S24 · A request to which no limit applies is denied** (E219).
+
+**S25 · An instrument is an identity and carries no ceiling.** `instrument I = <ref>` binds a
+name to a funding source — a card, a network token, a wallet. Every cap on it is an ordinary
+limit with `for instrument is I`.
+
+```
+  instrument visa_virtual = card://visa/tok_a1b2c3
+  instrument mc_token = card://mastercard/tok_d4e5f6
+  instrument visa_gold = card://visa/tok_g7h8i9
+```
+
+> An earlier draft of this rule put an `up to` on the declaration, on the analogy with
+> prohibition: a cap that travels with the thing, so a limit added later cannot forget it. The
+> analogy fails. A prohibition is an absolute refusal and belongs to the document; an
+> instrument's ceiling is ordinary policy, differs per controller, and wants windows, scopes and
+> escalations — which is to say it wants to be a limit, and building a second construct that
+> grows into one is how a language ends up with two of everything.
+>
+> S24 supplies the safety the travelling cap was for. An instrument that no limit names cannot
+> be spent from at all, because no limit applies and the request is denied. Fail-closed by
+> omission rather than by a second mechanism.
+
+**S26 · An instrument reference MUST NOT carry a credential** (E220). The `handle` is an opaque,
+non-secret identifier — a network token id, an issuer-side reference, a wallet address. A PAN,
+a CVV, an expiry, a private key or a seed phrase in a charter is a conformance failure, not a
+style problem.
+
+> A charter is written to be reviewed, diffed, signed, stored and shown to an auditor. It is the
+> one document in this system guaranteed to be copied. A reference identifies which instrument;
+> the ability to *use* it lives with whoever settles, and the two must not travel together.
+>
+> A parser cannot reliably detect every credential, so this is stated as a requirement on
+> authors and tooling rather than a check a compiler can complete. A compiler SHOULD reject a
+> `handle` that looks like a PAN — 13–19 digits passing Luhn — because that case is both the
+> most likely and the most damaging, and catching it cheaply is better than catching nothing.
+
+> This is what makes `for` safe, and without it `for` would be the largest hole in the language.
+> Before it, every limit applied to every request, so the minimum always bound something. A
+> limit that can decline to apply means a request can match none, and "matches no rule" must
+> never mean "permitted" in a document whose purpose is to bound spending. S16 already refuses
+> to let a charter permit everything by declaring nothing; S24 refuses to let it permit
+> something by covering everything else.
+>
+> The practical effect is that a charter's limits have to cover the ground the charter intends
+> to authorise, and anything outside that ground is refused rather than unbounded. Adding a
+> `for` to a limit can therefore only ever *reduce* what a charter authorises, which is what S3
+> requires of every construct.
 
 > **This is why the members stay individually named rather than being an opaque set.** A group
 > whose deployments had no identity of their own would make the aggregate expressible and
@@ -1084,7 +1165,7 @@ general and S3 requires to always be available.
 Compilation emits, per limit:
 
 ```
-limit_id · dimension · asset · base · exceptions[] · ceiling_static
+limit_id · dimension · asset · base · exceptions[] · ceiling_static · applies_program
          · window_kind · window_params · tz · scope_key
          · escalations[] · selector_program
 ```
@@ -1099,8 +1180,22 @@ and per document a header:
 
 ```
 charter_id · version · resolver_tier · resolver_version · tzdata_version
-         · timezone · resolved_assets[] · asset_groups[] · prohibitions[]
+         · timezone · resolved_assets[] · asset_groups[] · instruments[]
+         · prohibitions[] · ceiling_document
 ```
+
+`applies_program` is the compiled `for` condition, or absent when the limit declares none. It is
+a `selector_program` over the same closed field set and is evaluated first: a limit whose
+`applies_program` does not hold is not consulted and its accumulator does not move. S24 turns an
+empty set of applicable limits into a denial, so this is the one program in the compiled form
+whose *failure* to match has to be counted rather than ignored.
+
+`instruments` maps each declared instrument name to its reference, so the engine can evaluate an
+`instrument` comparison without parsing a reference at run time.
+
+`ceiling_document` is S5.1's sum per asset — what the whole charter authorises over a window.
+It is emitted rather than left to be derived because it is the number a controller actually
+wants and the one no single limit states.
 
 `asset_groups` maps each group's name to the member names it spans, so the engine can decide
 S23 applicability — does this limit's asset cover the asset that actually settled — without
@@ -1142,6 +1237,9 @@ E2xx literal    201 unknown asset name            202 fractional digits exceed d
                 214 duplicate asset group member
                 215 asset group with fewer than two members
                 216 asset group member is not an asset
+                217 unknown instrument name        218 malformed instrument reference
+                219 no limit applies to this request
+                220 credential in an instrument reference
 E3xx structure  301 operator not valid for field  302 heterogeneous group
                 303 group kind mismatch           304 overlapping exceptions
                 305 non-literal escalation ceiling 306 escalation below base

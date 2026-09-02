@@ -1,0 +1,14 @@
+# expect: E217
+# S21 covers instruments as well as assets. amex_black is named and never declared.
+charter undeclared-instrument version 1
+resolver full@41
+timezone America/New_York
+
+  asset USD_iso4217 = unit://USD/ISO4217
+
+  instrument visa_virtual = card://visa/tok_a1b2c3
+
+  limit spend
+    amount 100.00 USD_iso4217
+    for instrument is amex_black
+    per fixed month

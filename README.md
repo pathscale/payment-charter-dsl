@@ -54,7 +54,7 @@ to answer whether it preserves that.
 | [`docs/language-comparison.md`](docs/language-comparison.md) | Why not Catala, Rego, DMN, DAML or Rebel. |
 
 The specification covers lexical structure, a complete EBNF, the field × operator × value type
-table, twenty-three static rules (S1–S23), hierarchy (H1–H6), dynamic semantics, the compiled form,
+table, twenty-six static rules (S1–S26), hierarchy (H1–H6), dynamic semantics, the compiled form,
 charter authenticity, a stable error catalogue (E1xx–E5xx), and the conformance layout.
 
 **A charter must be signed by its controller, and the engine verifies before it enforces**

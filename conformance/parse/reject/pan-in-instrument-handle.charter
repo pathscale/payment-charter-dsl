@@ -1,0 +1,15 @@
+# expect: E220
+# S26: a charter is the one document guaranteed to be copied. The handle is an
+# opaque reference, never a credential. This one is 16 digits and passes Luhn.
+charter pan-in-charter version 1
+resolver full@41
+timezone America/New_York
+
+  asset USD_iso4217 = unit://USD/ISO4217
+
+  instrument visa_virtual = card://visa/4539578763621486
+
+  limit spend
+    amount 100.00 USD_iso4217
+    for instrument is visa_virtual
+    per fixed month

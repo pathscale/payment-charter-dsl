@@ -1,0 +1,15 @@
+{
+  "description": "A million-dollar authority is fine when the number is a literal and the large path needs two humans.",
+  "charter": "parse/accept/instruments-per-card-caps.charter",
+  "clock": "2026-09-01T09:00:00-04:00",
+  "requests": [
+    { "amount": "4999.99", "asset": "USD_iso4217", "instrument": "visa_gold", "expect": "allow",
+      "note": "below the threshold, autonomous" },
+    { "amount": "5000.00", "asset": "USD_iso4217", "instrument": "visa_gold", "expect": "escalate",
+      "escalation": { "limit": "gold_monthly", "trigger": "at least", "quorum": 2, "approvers": "finance" },
+      "note": "at least, not above - equality fires" },
+    { "amount": "42000.00", "asset": "USD_iso4217", "instrument": "visa_gold", "expect": "escalate",
+      "escalation": { "limit": "gold_monthly", "trigger": "at least", "ceiling": "1000000.00" },
+      "note": "the car. Reachable, and only with two of finance approving the exact digest." }
+  ]
+}

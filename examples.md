@@ -47,9 +47,19 @@ timezone America/New_York
 
   limit food
     amount 200.00 USDC_circle
+    for category in groceries
     per fixed week
     scope account
 ```
+
+**The `for` clause is doing the work, and an earlier draft of this example omitted it.** Without
+it the limit reads "$200 a week" and *means* "$200 a week on everything" — every limit applies to
+every request unless it says otherwise. The charter would have been a correct document expressing
+a policy nobody wrote.
+
+Note what S24 then does to this charter: with `food` the only limit, a payment to a non-grocery
+merchant matches no limit and is **denied**. That is the intended reading of "food, $200 a week"
+by someone who has written down only that one rule, and it is the safe one.
 
 ### 2b · The half that must be refused
 
@@ -306,6 +316,95 @@ good reason.
 **One request settles once.** An executor MAY NOT pay 70.00 as 40.00 from one chain and 30.00
 from the other and report one payment. Those are two requests, separately reserved and
 separately counted — otherwise a `count` limit is counting something other than transactions.
+
+---
+
+## 2C · Cards, tokens and wallets
+
+An **instrument** is where money comes from: a Visa virtual card, a Mastercard network token, a
+Solana wallet. Limits shape around instruments and categories at least as often as around
+assets, which is what the `for` clause is for.
+
+```
+charter corporate-cards version 1
+resolver full@41
+timezone America/New_York
+
+  asset USD_iso4217 = unit://USD/ISO4217
+
+  instrument mc_token = card://mastercard/tok_d4e5f6
+  instrument visa_gold = card://visa/tok_g7h8i9
+  instrument visa_virtual = card://visa/tok_a1b2c3
+
+  approvers finance = { cfo, controller }
+
+  limit visa_monthly
+    amount 1000.00 USD_iso4217
+    for instrument is visa_virtual
+    per fixed month
+
+  limit mastercard_monthly
+    amount 50.00 USD_iso4217
+    for instrument is mc_token
+    per fixed month
+
+  limit gold_monthly
+    amount 1000000.00 USD_iso4217
+    for instrument is visa_gold
+    per fixed month
+    escalate at least 5000.00 USD_iso4217 require 2 of finance up to 1000000.00 USD_iso4217 within 5 days
+```
+
+### 2C.1 · An instrument is an identity, not a ceiling
+
+`instrument visa_gold = card://visa/tok_g7h8i9` binds a name and nothing else. Every cap is an
+ordinary limit (S25), so instrument caps get windows, scopes, exceptions and escalations for
+free instead of growing a parallel construct that would eventually need all four anyway.
+
+**The handle is not a credential** (S26). `tok_g7h8i9` is a network token id — an opaque
+reference that identifies which card without being able to charge it. A charter is the one
+document in this system guaranteed to be copied: reviewed, diffed, signed, handed to an auditor.
+A PAN in it is a conformance failure, and a compiler SHOULD reject a handle that looks like one.
+
+### 2C.2 · Omission denies, which is what makes this safe
+
+A fourth card, added to the wallet and not to the charter, cannot be spent from. No limit
+applies to a request naming it, so S24 denies (E219).
+
+That is the whole reason instruments carry no ceiling of their own. The alternative design put
+an `up to` on the declaration so a forgotten limit could not mean unbounded spending — but a
+declaration that is simply absent already means denied, and one mechanism is better than two.
+
+### 2C.3 · Go buy me a car
+
+`visa_gold` authorises a million dollars, and the language is entirely comfortable with that
+because the number is a literal in the source. S5 reads it without running anything; the charter
+says a million and means a million.
+
+What makes it a policy rather than a hole is the escalation. Anything at or above `5000.00`
+takes two of finance, so the autonomous ceiling on that card is 5000.00 and the accompanied one
+is 1000000.00. Two numbers, both in the file, and the second is only reachable with two humans
+approving the exact payment digest (§8.5).
+
+The car is fine. The car is fine *because* somebody has to say so.
+
+### 2C.4 · What the whole charter authorises
+
+Per S5.1, the static maximum over a month is the **sum** of the limits over `USD_iso4217`:
+
+```
+  visa_monthly          1000.00
+  mastercard_monthly       50.00
+  gold_monthly        1000000.00
+                    ------------
+                     1001050.00
+```
+
+Not 1000000.00, and not any of the three numbers written. This is the figure a compiler emits
+and the one that answers "how much can this thing spend", and it is exactly the arithmetic that
+turns two hundred-a-month caps on equivalent assets into two hundred a month (§2B). Three
+sensible per-card limits still add up, and a controller is owed the total rather than left to
+compute it.
 
 ---
 
