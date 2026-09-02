@@ -1,0 +1,12 @@
+charter hostile-symbol version 1
+resolver full@41
+timezone UTC+00:00
+
+  asset group_solana = mint://group/Attacker/8b7Rp2VqNzKcF4uYxWtJ3sLmHdGaQ9eZcXvBnMkTyPwR/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers finance = { alice, bob }
+
+  limit spend
+    amount 100.00 group_solana
+    per fixed day
+    escalate at least 50.00 group_solana require 2 of finance up to 500.00 group_solana within 1 days

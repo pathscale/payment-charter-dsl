@@ -139,6 +139,12 @@ so changes unrelated lines whenever a name changes.
 trailing comma. Items keep source order; set membership is unordered, but reordering them buys
 nothing and loses the author's grouping.
 
+**Timezones are always emitted with an explicit offset.** `UTC` is accepted on input and means
+`UTC+00:00` (§2.9); the canonical form is `UTC+00:00`. Two spellings of one offset is exactly
+what a canonical form exists to remove, and the explicit one is the better survivor: every
+timezone in an emitted document then has the same shape, so a diff of two charters compares
+`UTC+00:00` against `UTC-05:00` rather than against a word.
+
 **Money literals** are emitted with exactly the asset's declared minor-unit digits — `500.00`
 for a 2-decimal asset, never `500` or `500.000`. Counts are emitted with no leading zeros.
 Durations and calendar units are emitted in the unit the author used; the unit is significant
