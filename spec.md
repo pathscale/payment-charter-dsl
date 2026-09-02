@@ -1711,6 +1711,7 @@ conformance/
   asset-ref/                     the mint:// and unit:// sub-parser, on its own
   type-table/                    §6's field × operator cross product, generated
   resolver/                      S7–S13, against the tier in `resolver/common-41.json`
+  ported/catala/                 cases from upstream suites, with provenance headers
   authenticity/                  signature, key, digest, version and validity cases (§12)
 ```
 

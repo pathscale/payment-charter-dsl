@@ -1,0 +1,28 @@
+# Derived from CatalaLang/catala tests/exception/good/two_unlabeled_exceptions.catala_en
+# Copyright (c) Inria and the Catala contributors. Apache-2.0.
+# Modified: re-expressed in Payment Charter DSL.
+#
+# Two independent variables, each with one exception. Catala answers x = 1 and
+# y = 3; Charter's equivalent is two limits that each resolve their own
+# exception, and the two do not interact.
+#
+# This one ports cleanly because the exceptions belong to different values.
+# S4 constrains exceptions *within one dimension* (§7), so limits compose by
+# conjunction and never by precedence — the distinction design.md opens with.
+charter two-unlabeled version 1
+resolver common@41
+timezone UTC
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  group suppliers = { 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU }
+
+  limit x
+    amount 0 USDC_circle
+      except 100.00 USDC_circle when counterparty in suppliers
+    per fixed day
+
+  limit y
+    amount 200.00 USDC_circle
+      except 300.00 USDC_circle when counterparty in suppliers
+    per fixed week

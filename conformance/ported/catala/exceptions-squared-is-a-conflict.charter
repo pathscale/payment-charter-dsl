@@ -1,0 +1,30 @@
+# expect: E304
+# Derived from CatalaLang/catala tests/exception/good/exceptions_squared.catala_en
+# Copyright (c) Inria and the Catala contributors. Apache-2.0.
+# Modified: re-expressed in Payment Charter DSL.
+#
+# Catala's canonical priority test: x = 0, an exception giving 1, and an
+# exception to that exception giving 2. It answers 2, by declared priority.
+#
+# Charter answers E304. S4 forces exceptions to be provably disjoint rather
+# than resolving them by priority, so a chain of three conditions that all hold
+# for the same request is rejected naming them. This is the deliberate
+# divergence design.md records: we borrowed Catala's default-logic model and
+# are stricter about ambiguity.
+#
+# The reason is that a ceiling resolved by priority is a ceiling a reviewer has
+# to simulate. Under S4 every request meets exactly one value, and which one is
+# readable without running anything.
+charter exceptions-squared version 1
+resolver common@41
+timezone UTC
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  group everyone = { 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU }
+
+  limit x
+    amount 0 USDC_circle
+      except 100.00 USDC_circle when counterparty in everyone
+      except 200.00 USDC_circle when counterparty in everyone
+    per fixed day

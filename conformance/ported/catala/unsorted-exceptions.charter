@@ -1,0 +1,21 @@
+# Derived from CatalaLang/catala tests/exception/good/unsorted_unlabeled_exceptions.catala_en
+# Copyright (c) Inria and the Catala contributors. Apache-2.0.
+# Modified: re-expressed in Payment Charter DSL.
+#
+# Catala writes the exceptions before the definitions they attach to and
+# answers the same as if they had been written after: source order is not
+# meaning.
+#
+# Charter agrees for its own reason. §5.2 makes declarations order-independent
+# and resolves names in a pass separate from parsing, so the limit below may be
+# written before the asset it spends. §1.2's canonical form then sorts both, so
+# the emitted document does not record which order the author typed.
+charter unsorted version 1
+resolver common@41
+timezone UTC
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
