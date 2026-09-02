@@ -1,6 +1,6 @@
 # The charter a controller writes, and the engine that enforces it
 
-Date 2026-09-02. Companion to [`product-todo.md`](product-todo.md), section C2.
+Date 2026-09-02. Companion to the product TODO (internal), section C2.
 
 Two layers, and only the second one exists.
 

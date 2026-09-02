@@ -218,7 +218,7 @@ argument, since a ceiling of "$500" is unbounded in settled units as the rate mo
   for crypto-native users, who think in tokens rather than dollars.
 - **A `unit://` limit is opt-in**, requires a **signed rate** with a staleness bound, and
   **denies when stale**. Never a 1:1 assumption: the depeg record in
-  [`synthetic-stablecoins.md`](synthetic-stablecoins.md) — USDe at $0.65 on Binance, October
+  the synthetic-stablecoin survey (internal) — USDe at $0.65 on Binance, October
   2025 — is the case where 1:1 fails exactly when the cap matters.
 - **Convert conservatively**, always rounding to tighten. Rate manipulation can then only
   refuse payments that should have passed, which is a liveness failure rather than a safety
@@ -226,7 +226,7 @@ argument, since a ceiling of "$500" is unbounded in settled units as the rate mo
 
 ### Asset class is a predicate
 
-The five-class taxonomy in [`synthetic-stablecoins.md`](synthetic-stablecoins.md) becomes
+The five-class taxonomy in the synthetic-stablecoin survey (internal) becomes
 something a controller can state rather than something hardcoded:
 
 ```
