@@ -3,8 +3,8 @@
   "charter": "parse/accept/instruments-per-card-caps.charter",
   "clock": "2026-09-01T09:00:00-04:00",
   "requests": [
-    { "amount": "40.00", "asset": "USD_iso4217", "instrument": "mc_token", "expect": "allow" },
-    { "amount": "20.00", "asset": "USD_iso4217", "instrument": "mc_token", "expect": "deny",
+    { "amount": "40.00", "asset": "USD_iso4217", "instrument": "mastercard_token", "expect": "allow" },
+    { "amount": "20.00", "asset": "USD_iso4217", "instrument": "mastercard_token", "expect": "deny",
       "denied_by": ["mastercard_monthly"],
       "note": "50.00 cap on this card; the visa limits do not apply and cannot help" },
     { "amount": "20.00", "asset": "USD_iso4217", "instrument": "visa_virtual", "expect": "allow",

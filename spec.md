@@ -915,7 +915,7 @@ limit with `for instrument is I`.
 
 ```
   instrument visa_virtual = card://visa/tok_a1b2c3
-  instrument mc_token = card://mastercard/tok_d4e5f6
+  instrument mastercard_token = card://mastercard/tok_d4e5f6
   instrument visa_gold = card://visa/tok_g7h8i9
 ```
 
@@ -1093,9 +1093,45 @@ cases a qualifier MUST follow (E211, E212 — the same two rules as S19 and S20,
 kind that satisfies §7.1's test for the same reason).
 
 `instrument visa_gold = card://visa/tok_g7h8i9` is legal. `instrument visa_gold =
-card://mastercard/tok_g7h8i9` is E211: it is S19's lie with a card in place of a mint, and it is
-worth as much to an attacker. Bare `instrument visa = …` is E212 as soon as there is more than
-one Visa card, and forbidding it unconditionally costs nothing.
+card://mastercard/tok_g7h8i9` is E211. Bare `instrument visa = …` is E212 as soon as there is
+more than one Visa card, and forbidding it unconditionally costs nothing.
+
+The prefix is the network in full. `mastercard_token` is legal and `mc_token` is E211, because
+a compiler cannot tell a contraction from a different network, and a rule that has to guess
+which is which is not a rule.
+
+#### 7.1.3 An instrument reference is not verified, and S27 is weaker than S19
+
+S19 and S27 look alike and are not equally strong. Saying so is the point of this section,
+because the difference is the kind of thing a reader assumes away.
+
+**S7 stands behind S19.** An asset reference is checked segment by segment against the pinned
+resolver, so `mint://USDC/Circle/…` is a claim someone independently confirms. S19 then checks
+the *alias* against a symbol that is itself verified, and the chain is complete.
+
+**Nothing stands behind S27.** There is no resolver for cards. `card://visa/tok_g7h8i9` is an
+author's assertion from end to end: nothing in this specification confirms that the handle is a
+Visa token, or that it exists, or that the controller holds it. S27 therefore checks
+**self-consistency** — the name agrees with the network the document states — and not truth. An
+author who writes `card://visa/<a Mastercard token>` gets a document that compiles.
+
+Three consequences follow, and they are the reason to state this rather than let S27 borrow
+S19's credibility:
+
+1. **The scheme and network are not decoration, but they are not evidence either.** They tell a
+   reader and an executor which rail settles, and `card://` versus `wallet://` is not redundant
+   with the asset: it says whether a payment leaves through a card network or a chain, which
+   differ in reversibility, in settlement time, and in who can reverse them.
+2. **An instrument condition must not raise a ceiling.** The same reasoning as W5 applies with
+   more force, since merchant data at least comes from an acquirer while this comes from the
+   document's own author with nothing checking it. Selecting *which* bounded limit applies
+   (`for instrument is visa_gold`) is fine and is the intended use; `except unlimited when
+   instrument is …` is not.
+3. **A verified instrument registry is the obvious next step** and is deliberately not
+   specified here (§13.2). It would be the resolver's shape applied to instruments — a pinned,
+   curated source that confirms a handle belongs to the network and the controller it claims —
+   and until it exists, an instrument reference should be read as a label, not a credential and
+   not a proof.
 
 **S28 · An identifier's declaration kind MUST match the kind its position requires**, per the
 table above. There is no position in the grammar where two kinds are both acceptable, and none
@@ -1745,3 +1781,22 @@ It is deferred rather than adopted because nothing in the core mandate needs it,
 grammar is one-way: syntax added can be removed only by breaking documents already written,
 while syntax deferred costs nothing but a later version number. When a price table is wanted,
 this is the design — with the sum.
+
+### 13.2 A verified instrument registry
+
+`card://` and `wallet://` references are author-asserted end to end (§7.1.3). An instrument
+registry would be the resolver's shape applied to instruments: a pinned, curated source
+confirming that a handle belongs to the network it claims and to the controller installing the
+charter, so S27 could check truth rather than self-consistency.
+
+It is deferred rather than specified because the trust model differs from the resolver's in a
+way that has not been worked out. A mint is a public fact anyone can verify independently; a
+card token is a private relationship between an issuer, a processor and one cardholder. A
+registry of them is either operated by whoever issues the instruments — in which case pinning
+a version means pinning something the controller cannot audit — or it is a second custodial
+database of everybody's payment instruments, which is a worse thing to build than the problem
+it solves.
+
+Until that is answered, the honest position is the one §7.1.3 states: the reference is a label,
+S27 catches an inconsistent document rather than a false one, and nothing in the language should
+grant authority on the strength of an instrument's stated network.

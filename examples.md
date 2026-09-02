@@ -332,7 +332,7 @@ timezone America/New_York
 
   asset USD_iso4217 = unit://USD/ISO4217
 
-  instrument mc_token = card://mastercard/tok_d4e5f6
+  instrument mastercard_token = card://mastercard/tok_d4e5f6
   instrument visa_gold = card://visa/tok_g7h8i9
   instrument visa_virtual = card://visa/tok_a1b2c3
 
@@ -345,7 +345,7 @@ timezone America/New_York
 
   limit mastercard_monthly
     amount 50.00 USD_iso4217
-    for instrument is mc_token
+    for instrument is mastercard_token
     per fixed month
 
   limit gold_monthly
