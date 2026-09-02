@@ -1339,6 +1339,17 @@ fee against the same ceiling, and the charter's answer to "can I do this in one 
 failure. Releasing it would let an agent with a total failure rate retry without bound, which
 is the case the control exists for.
 
+A `count` draws exactly **one** from its accumulator per request, whatever the payment is worth,
+and it has no asset: a rate bounds how many payments are made and says nothing about what they
+are denominated in. It is therefore applicable to every request its `for` clause admits, and an
+engine MUST NOT gate it on the request's asset — there is no asset on the limit to compare
+against.
+
+**A `count` does not satisfy S24.** S24 asks whether the money is bounded, and a rate answers a
+different question: a document whose only applicable rule were `count 20 per fixed day` would
+authorise any sum at all, twenty times a day. An `amount` limit must apply, or the request is
+denied (E219), and in a chain that holds at every level (H5).
+
 **8.1.4 · Release requires proof of death, not a timeout.** An amount returns to the allowance
 only when the transaction provably can never land — on Solana, blockhash expiry, roughly 150
 slots. Releasing on a timer while a transaction is still in flight double-spends the allowance.
@@ -1548,10 +1559,28 @@ company-wide limit means. Accumulator keys gain the level: `(level, limit id, sc
 asset)`. `scope` is orthogonal — a limit at the department with `scope agent` means per agent
 within that department.
 
+*level* is the declaring charter's **id**, never its index in the chain. An id is stable across
+versions (E506) and across re-rooting, so an accumulator survives an install for the same reason
+a window instance does: an edit changes the ceiling, never the meter. Indices are not — inserting
+a level above would silently reset every meter beneath it.
+
 **H3 · Escalation is answered by the level that imposed the constraint.** If the binding
 ceiling came from COMPANY_WIDE, a department's approvers MUST NOT satisfy it (E313). A
 manager cannot convene a quorum of their own reports to spend past a company limit. Where
 several levels bind, the highest imposing level's approvers are required.
+
+At evaluation this holds structurally rather than by a check: a limit's own `escalate` clauses
+answer only its own constraint, and a level that ran out of allowance having declared no way to
+appeal is refused outright (§8.4) — a deeper level's quorum is never offered the chance to
+answer for it. Where thresholds at two levels fire on the same request, the shallower level's
+clause is the one reported.
+
+E313 is therefore a **static** rule, and a narrow one: a child MUST NOT declare an escalation
+whose `up to` value exceeds what its chain permits even with approval. A child *base* above the
+parent is dead text and W2 already says so; E313 is the different claim that a quorum named at
+this level reaches past a ceiling set above it. It is an error rather than a warning because an
+interface would otherwise show a person "1 of dept_leads, up to 1,000,000" beneath a company cap
+of 200, and the number they were approving against would be a fiction.
 
 **H4 · `unlimited` means *this level adds no constraint*, never *no constraint exists*.**
 
@@ -1599,10 +1628,16 @@ prohibition_id · selector_program
 and per document a header:
 
 ```
-charter_id · version · resolver_tier · resolver_version
+charter_id · version · parent · resolver_tier · resolver_version
          · timezone · resolved_assets[] · asset_groups[] · instruments[]
          · prohibitions[] · ceiling_document
 ```
+
+`parent` is the `extends` pin — the parent charter id and the exact version (§8A) — or absent
+in a root. It is part of the compiled form, and so part of §12.3's digest, because a child that
+did not carry its parent could be installed under a different chain with its signature still
+verifying. Re-parenting a signed child beneath a laxer company charter would otherwise raise
+every ceiling in it without altering a byte the controller signed.
 
 `applies_program` is the compiled `for` condition, or absent when the limit declares none. It is
 a `selector_program` over the same closed field set and is evaluated first: a limit whose
@@ -1674,6 +1709,7 @@ E3xx structure  301 operator not valid for field  302 heterogeneous group
                 314 `unlimited` in a root charter
                 315 asset with no cap at any level
                 316 prohibitions but no limit     317 unreachable prohibition
+                318 chain does not link
 E4xx resolver   401 segment disagrees             402 unknown mint
                 403 unknown chain namespace       404 missing or stale rate source
                 405 pinned asset changed          406 mint revoked
@@ -1708,6 +1744,7 @@ conformance/
   roundtrip/*.charter            text → JSON → text, byte-identical in canonical form (§1.2)
   canonical/*.charter            + expected compiled bytes
   eval/*.json                    charter + request sequence → expected decisions
+  hierarchy/*.json               a chain, root first → link findings and decisions (§8A)
   asset-ref/                     the mint:// and unit:// sub-parser, on its own
   type-table/                    §6's field × operator cross product, generated
   resolver/                      S7–S13, against the tier in `resolver/common-41.json`
@@ -1728,6 +1765,10 @@ MUST scan that whole block for `# expect:` rather than reading line one. A fixtu
 `roundtrip/` is a **byte comparison** against the canonical text form of §1.2, not a semantic
 one. Two emitters that agree semantically and disagree on layout are two emitters that will
 drift.
+
+`hierarchy` vectors MUST include one for each of H1 through H6, and link cases for E312, E313,
+E315, E318, E407 and W2. H2 is only observable across two leaves, so its vector MUST swap the
+chain to a sibling and show the second agent refused by a meter the first one moved.
 
 `eval` vectors MUST include: the 101st unit against a 100-unit allowance escalating rather than
 failing; a reservation released on blockhash expiry and not on a timer; a `count` not released

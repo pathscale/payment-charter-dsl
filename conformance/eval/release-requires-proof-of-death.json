@@ -1,0 +1,16 @@
+{
+  "description": "8.1.4. An amount returns to the allowance only when the transaction provably can never land, never on a timer. Time passing changes nothing; the release does.",
+  "charter": "parse/accept/rate-and-balance.charter",
+  "clock": 1767225600,
+  "requests": [
+    { "amount": "1000.00", "asset": "USDC_circle", "agent": "a1", "expect": "allow", "id": "inflight",
+      "note": "The whole daily allowance, reserved." },
+    { "at": 1767268800, "note": "Twelve hours later, same fixed day." },
+    { "amount": "1.00", "asset": "USDC_circle", "agent": "a1", "expect": "deny",
+      "denied_by": ["daily_spend"],
+      "note": "Still held. A reservation that has merely been waiting a long time has not been proven dead." },
+    { "release": "inflight", "note": "Blockhash expiry." },
+    { "amount": "1000.00", "asset": "USDC_circle", "agent": "a1", "expect": "allow",
+      "note": "The full allowance, back at once — and back because of the evidence, not the clock." }
+  ]
+}

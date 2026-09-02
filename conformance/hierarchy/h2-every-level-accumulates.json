@@ -1,0 +1,20 @@
+{
+  "description": "H2. A payment by the leaf draws down the leaf's allowance, its department's and the company's. Bob is refused by a meter he never touched himself, which is the whole content of a company-wide limit.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/dept-travel.charter", "hierarchy/agent-ada.charter"],
+  "clock": 1767225600,
+  "requests": [
+    { "amount": "200.00", "asset": "USDC_circle", "expect": "allow" },
+    { "amount": "200.00", "asset": "USDC_circle", "expect": "allow" },
+    { "amount": "200.00", "asset": "USDC_circle", "expect": "allow",
+      "note": "Ada is now at her own 600.00 ceiling; the department meter reads 600.00 too." },
+    { "amount": "1.00", "asset": "USDC_circle", "expect": "deny",
+      "denied_by": ["agent_ada.agent_monthly"] },
+    { "chain": ["hierarchy/company-wide.charter", "hierarchy/dept-travel.charter", "hierarchy/agent-bob.charter"],
+      "note": "A sibling leaf under the same department. His own meter is empty." },
+    { "amount": "150.00", "asset": "USDC_circle", "expect": "allow",
+      "note": "750.00 of the department's 800.00." },
+    { "amount": "100.00", "asset": "USDC_circle", "expect": "deny",
+      "denied_by": ["dept_travel.dept_monthly"],
+      "note": "Bob has spent 150.00 of his own 600.00 and is refused: what ran out is the department's, spent by someone else." }
+  ]
+}

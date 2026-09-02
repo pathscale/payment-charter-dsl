@@ -1,0 +1,5 @@
+{
+  "description": "E407. The department is pinned to company_wide@7 and version 6 was supplied. A later parent is allowed, because a parent that tightens must propagate; an earlier one is how a ceiling gets quietly raised, so the pin is a floor.",
+  "chain": ["hierarchy/company-wide-v6.charter", "hierarchy/dept-travel.charter"],
+  "expect_link": "E407"
+}

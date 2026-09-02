@@ -1,0 +1,15 @@
+{
+  "description": "8.1.7 at UTC-05:00. The boundary is at 05:00Z, so a payment made at 02:00Z belongs to the previous local day — the sign of the offset decides which side of the meter a late-evening payment falls on.",
+  "charter": "parse/accept/negative-offset.charter",
+  "clock": 1767243600,
+  "clock_note": "2026-01-01T05:00:00Z, which is 2026-01-01T00:00:00 at UTC-05:00",
+  "requests": [
+    { "amount": "100.00", "asset": "USDC_circle", "expect": "allow" },
+    { "at": 1767322800, "note": "2026-01-02T03:00:00Z — still 2026-01-01 22:00 locally." },
+    { "amount": "1.00", "asset": "USDC_circle", "expect": "deny",
+      "denied_by": ["daily"],
+      "note": "Past UTC midnight and inside the same local day. An engine keyed on UTC days would have allowed this." },
+    { "at": 1767330000, "note": "2026-01-02T05:00:00Z — local midnight." },
+    { "amount": "100.00", "asset": "USDC_circle", "expect": "allow" }
+  ]
+}

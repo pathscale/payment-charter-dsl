@@ -1,0 +1,16 @@
+{
+  "description": "8.1.3. A count is a rate: consumed on attempt and never released, including on failure. Releasing it would let an agent with a total failure rate retry without bound, which is the case the control exists for. The amount from the same payments does come back (8.1.4), so this vector separates the two dimensions rather than assuming they move together.",
+  "charter": "parse/accept/rate-and-balance.charter",
+  "clock": 1767225600,
+  "requests": [
+    { "amount": "10.00", "asset": "USDC_circle", "agent": "a1", "expect": "allow", "id": "one" },
+    { "amount": "10.00", "asset": "USDC_circle", "agent": "a1", "expect": "allow", "id": "two" },
+    { "release": "one", "note": "Blockhash expiry: proof this one can never land." },
+    { "release": "two", "note": "And this one." },
+    { "amount": "10.00", "asset": "USDC_circle", "agent": "a1", "expect": "allow", "id": "three",
+      "note": "The third attempt of three. Both amounts came back; neither count did." },
+    { "amount": "10.00", "asset": "USDC_circle", "agent": "a1", "expect": "deny",
+      "denied_by": ["transaction_count"],
+      "note": "Refused by the rate and not by the balance: 10.00 of a 1000.00 daily allowance is spent, and three attempts of three are gone." }
+  ]
+}

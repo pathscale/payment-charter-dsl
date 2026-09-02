@@ -1,0 +1,8 @@
+charter dept_travel 3
+extends company_wide 7
+resolver common 41
+offset 0
+asset USDC_circle 2
+limit dept_monthly amount USDC_circle 80000 fixed:month:0 -
+  escalate above:20000 1 dept_leads 80000 86400
+ceiling USDC_circle 80000
