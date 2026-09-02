@@ -1,0 +1,13 @@
+# expect: E201
+# S21 covers the asset field in a condition, not only money literals.
+# USDC_circle is declared; USDT_tether is used and never declared.
+charter undeclared-in-condition version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDC_circle
+      except 10.00 USDC_circle when asset is USDT_tether
+    per fixed day

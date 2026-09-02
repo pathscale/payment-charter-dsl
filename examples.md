@@ -219,6 +219,96 @@ to enumerate employees, and it cannot be worked around by one.
 
 ---
 
+## 2B · One asset, several chains
+
+USDC is not one balance. Circle issues it on Solana, on Ethereum and elsewhere; the deployments
+are the same asset — same issuer, same redemption, 1:1, same decimals — held in different
+wallets. Moving between them costs a fee and takes time.
+
+Declared as two assets with two limits, "a hundred a month" quietly becomes two hundred:
+
+```
+  asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_ethereum = mint://USDC/Circle/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/eip155:1
+
+  limit sol_monthly
+    amount 100.00 USDC_solana
+    per fixed month
+
+  limit eth_monthly
+    amount 100.00 USDC_ethereum
+    per fixed month
+```
+
+Each limit's static ceiling is 100.00 and the charter's is **200.00**. Nothing is wrong per
+rule; the document simply does not say what its author meant. A compiler SHOULD warn here (W4):
+two declarations the resolver reports as the same asset, capped separately.
+
+### 2B.1 · What the author meant
+
+```
+  asset USDC_ethereum = mint://USDC/Circle/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/eip155:1
+  asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  asset group USDC_circle = { USDC_ethereum, USDC_solana }
+
+  limit monthly
+    amount 100.00 USDC_circle
+    per fixed month
+```
+
+One accumulator across both chains. Static ceiling **100.00**, wherever it settles.
+
+### 2B.2 · Why the members keep their own names
+
+Because a cap can be correct in aggregate and badly placed in particular. Bridging back from
+Ethereum costs real money, so a controller may well want a hundred in total and not much of it
+stranded on the expensive chain. That needs no new construct — it is another limit, and §8.3
+already takes the most restrictive:
+
+```
+  limit monthly
+    amount 100.00 USDC_circle
+    per fixed month
+
+  limit ethereum_exposure
+    amount 25.00 USDC_ethereum
+    per fixed month
+```
+
+A Solana payment draws `monthly` only. An Ethereum payment draws both, and is refused past 25.00
+even with 90.00 of the group's allowance untouched (S23). Prohibiting a chain outright is
+ordinary too: `prohibit no_mainnet when asset is USDC_ethereum`.
+
+An opaque set — one alias secretly binding two references — would have made the aggregate
+expressible and every one of these impossible.
+
+### 2B.3 · The ceiling is authority, not liquidity
+
+Say the wallets hold 60.00 on Solana and 40.00 on Ethereum, under the `monthly` limit above.
+
+| Request | What happens |
+|---|---|
+| 50.00 | Settles on Solana. One payment, 50.00 off the monthly ceiling. The charter does not choose the chain and does not care which fits. |
+| 70.00 | **Fits nowhere.** Neither wallet holds 70.00, and the charter cannot conjure it. |
+
+The second row is the one that matters. The charter authorises 70.00 — there is 100.00 of
+allowance and the group spans both chains — and the payment still cannot be made in one go.
+Consolidating first is a *second payment*: it draws the same allowance, it pays a bridge fee
+that also draws it, it takes time, and under §8.1.4 its reservation is held until the source
+chain proves the transfer cannot land.
+
+None of that is the charter's problem to solve, and it is important that it does not try. A
+limit bounds what may leave. Reading it as a spendable balance is how a bound turns into a
+guess, and the engine would have to consult wallet state that S2 keeps out of conditions for
+good reason.
+
+**One request settles once.** An executor MAY NOT pay 70.00 as 40.00 from one chain and 30.00
+from the other and report one payment. Those are two requests, separately reserved and
+separately counted — otherwise a `count` limit is counting something other than transactions.
+
+---
+
 ## 3 · Organizational depth
 
 ```

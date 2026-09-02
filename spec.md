@@ -64,16 +64,20 @@ canonical form depend on a setting.
 line. Then declarations, grouped by kind in this order:
 
 1. `asset`
-2. `group`
-3. `approvers`
-4. `prohibit`
-5. `limit`
+2. `asset group`
+3. `group`
+4. `approvers`
+5. `prohibit`
+6. `limit`
 
 Within each kind, declarations are sorted by identifier, ascending by byte value. Declaration
 order is not semantic (§5), so sorting is what makes the output a function of the meaning rather
 than of the author's typing. A blank line separates one kind from the next, and separates each
-`limit` from the next; consecutive `asset`, `group` and `approvers` declarations are not
-separated.
+`limit` from the next; consecutive `asset`, `asset group`, `group` and `approvers` declarations
+are not separated.
+
+An `asset group`'s members are emitted in the same sorted-by-identifier order, so a group and
+the declarations it names read in one order throughout the document.
 
 **Within a limit,** clauses appear in grammar order: dimension, its `except` clauses, `per`,
 `scope`, then `escalate`. `except` clauses are sorted ascending by byte value of their emitted
@@ -377,10 +381,11 @@ charter        = "charter" ident "version" uint
 
 resolver-tier  = "common" | "full" ;
 
-declaration    = asset-decl | group-decl | approvers-decl
+declaration    = asset-decl | asset-group | group-decl | approvers-decl
                | prohibit-decl | limit-decl ;
 
 asset-decl     = "asset" ident "=" ( mint-ref | unit-ref ) ;
+asset-group    = "asset" "group" ident "=" "{" ident { "," ident } [ "," ] "}" ;
 group-decl     = "group" ident "=" "{" literal { "," literal } [ "," ] "}" ;
 approvers-decl = "approvers" ident "=" "{" ident { "," ident } [ "," ] "}" ;
 
@@ -503,7 +508,7 @@ Each field admits a fixed set of operators and value shapes. Anything else is a 
 |---|---|---|
 | `counterparty` | `is`, `is not`, `in`, `not in` | address, or group of addresses |
 | `category` | `is`, `is not`, `in`, `not in` | `mcc:` or `country:` tagged, or group thereof |
-| `asset` | `is`, `is not`, `in`, `not in` | declared asset ident, or set thereof |
+| `asset` | `is`, `is not`, `in`, `not in` | `asset` or `asset group` ident declared in this document (S21), or set thereof |
 | `asset.class` | `is`, `is not`, `in`, `not in` | class name, or set thereof |
 | `provenance` | `is`, `is not`, `in`, `not in`, `is at least` | plane, or set of planes |
 | `provenance.recipient` | as `provenance` | as `provenance` |
@@ -581,9 +586,13 @@ and MUST be greater than or equal to the base (E306).
 > special cases for one production is the language telling you the shape is wrong.
 
 **S6 · A limit's asset is fixed.** Every money literal in one limit — base, exceptions and
-escalation ceilings — MUST name the same declared asset (E307). Limits over different assets
-are different limits. A cap without an asset is not a bound, because summing across assets sums
-incommensurable units.
+escalation ceilings — MUST name the same declared `asset` or `asset group` (E307). Limits over
+different assets are different limits. A cap without an asset is not a bound, because summing
+across assets sums incommensurable units.
+
+An `asset group` satisfies S6 because S22 has already established that its members are one
+asset: same issuer, same symbol, same decimals, 1:1. Summing across a group's members is not
+summing incommensurable units, which is the only thing S6 forbids.
 
 **S7 · Every asset reference MUST resolve** in the pinned resolver, with **every segment
 matching** (E401). A `mint-ref` whose symbol, issuer or network disagrees with the resolver's
@@ -674,6 +683,105 @@ qualifier: `USDC_circle`, `USDC_wormhole`, never bare `USDC`.
 > one is a readability failure, not a safety failure: S7 still pins every segment, and S19 still
 > prevents the name contradicting the symbol.
 
+**S21 · Every asset named in a document MUST be declared in that document** (E201). This holds
+in every position an asset identifier can appear: the identifier of a money literal (§2.6), the
+value of an `asset` comparison, and every member of an inline set over the `asset` field. There
+is no default asset, no implicit asset, and no inference from context.
+
+> **The resolver is not a namespace.** `resolver common@41` reads like an import of the assets
+> in the `common` tier, and it is not one. An undeclared `USDC` is E201 even when the resolver
+> knows exactly one asset by that symbol, even when that asset is the obvious one, and even when
+> the document would compile unambiguously if the binding were supplied.
+>
+> The resolver's job is to *verify* a declaration and to supply the facts an author holds no
+> belief about — decimals, class, token program (§2.10.3). It never supplies the binding itself.
+> If it did, the meaning of a charter would depend on a document its author never read, the
+> alias would have been chosen by somebody else, and S19 and S20 would be policing a name that
+> appears nowhere in the file anyone signed.
+>
+> **A parent charter is not a namespace either.** §8A composes limits down a chain; it does not
+> export declarations. A child that spends `USDC_circle` declares `USDC_circle` itself, with the
+> full reference, in its own file. That is what keeps every document in a chain independently
+> readable, and what makes H1's minimum a comparison between two documents that each say what
+> they mean rather than one that inherits its vocabulary from another.
+>
+> The cost is one repeated declaration line per level. The thing bought is that no charter's
+> meaning lives anywhere except in the charter.
+
+**S22 · An `asset group` names several deployments of one asset, and every member MUST be that
+same asset.** Members are `asset` idents declared in this document (E201), never references and
+never other asset groups (E216). All members MUST agree byte-for-byte on `symbol` and `issuer`,
+and MUST agree on `decimals` as the resolver reports them (E213). Members MUST be pairwise
+distinct (E214), and there MUST be at least two (E215).
+
+```
+  asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_ethereum = mint://USDC/Circle/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/eip155:1
+
+  asset group USDC_circle = { USDC_solana, USDC_ethereum }
+```
+
+The group is one asset for the purposes of a limit: one accumulator, one ceiling **across every
+member** (§8.1.1). `amount 100.00 USDC_circle per fixed month` is a hundred dollars a month in
+total, which is what a controller who says "a hundred dollars of USDC a month" means.
+
+**S23 · A limit applies to a request whose settlement asset is the limit's asset, or is a member
+of it when the limit's asset is a group.** Every applicable limit is evaluated and §8.3 joins
+them, so a Solana payment under the declarations above draws both the `USDC_circle` accumulator
+and any accumulator on `USDC_solana` itself.
+
+> **This is why the members stay individually named rather than being an opaque set.** A group
+> whose deployments had no identity of their own would make the aggregate expressible and
+> everything else impossible, and the things it would make impossible are exactly the ones
+> §8.1.1A says a controller has to care about — moving value between chains costs a fee and
+> takes time, so a cap that is fine in aggregate can be badly placed in particular.
+>
+> With both named, per-deployment policy needs no new machinery at all. It is another limit, and
+> §8.3 already takes the most restrictive:
+>
+> ```
+>   limit monthly
+>     amount 100.00 USDC_circle
+>     per fixed month
+>
+>   limit ethereum_exposure
+>     amount 25.00 USDC_ethereum
+>     per fixed month
+> ```
+>
+> A hundred a month of USDC, of which at most twenty-five may sit on the expensive chain to
+> bridge back from. Prohibiting a deployment outright is likewise ordinary:
+> `prohibit no_mainnet when asset is USDC_ethereum`.
+
+> **None of this needs an exchange rate, which is why it is here and cross-asset ceilings are
+> not (§13).** The members are the same unit by construction — one issuer, one redemption, 1:1,
+> with `decimals` checked equal rather than assumed — so summing them is addition, not
+> conversion, and none of S11's objections about rate sources, staleness and rounding direction
+> apply. A ceiling over USDC and SOL needs a rate and stays deferred. A ceiling over Circle's
+> USDC wherever Circle issues it needs nothing.
+>
+> The issuer segment is what makes this safe rather than merely convenient.
+> `mint://USDC/Wormhole/…` cannot join a Circle group (E213), and that is correct: bridged USDC
+> is not redeemable 1:1 by Circle and is a different credit risk that happens to share a ticker.
+> The segment the reference already carried for readability turns out to be the equivalence key.
+>
+> S7 verifies every member's symbol and issuer against the resolver, so equivalence is checked
+> and never author-asserted. An author cannot group two mints the resolver disagrees about.
+
+**W3 · An asset declared and never used SHOULD warn.** It is carried into `resolved_assets`
+(§9) and therefore into S12's re-verification, so an unused declaration turns any later change
+to an asset this charter never spends into a compile failure for a charter it does not affect.
+
+**W4 · Two assets the resolver reports as equivalent, each capped by its own limit and never
+joined by an `asset group`, SHOULD warn.** Their ceilings sum, so a controller who wrote
+`100.00` twice meaning "a hundred a month" has authorised two hundred.
+
+> This is a warning and not an error because separate per-deployment caps are a legitimate
+> intent — "a hundred on Solana, fifty on Ethereum" is a sentence a treasurer means. The
+> compiler cannot tell that apart from the mistake, so it says what the document authorises in
+> total and names the two declarations. Silence is the one unacceptable option: the failure
+> is invisible precisely because each limit, read alone, says exactly what its author intended.
+
 **Emitted, not checked:** the static ceiling per limit per path (§9). A document whose bound
 cannot be computed does not compile.
 
@@ -684,8 +792,49 @@ cannot be computed does not compile.
 The model is **petty cash**: a limit's allowance is drawn down when a payment is committed to,
 not when it settles.
 
-**8.1.1** Each limit owns its own accumulator, keyed `(limit id, scope value, asset)`. Two
-limits with the same scope do **not** share a counter.
+**8.1.1** Each limit owns its own accumulator, keyed `(limit id, scope value, asset)`, where
+*asset* is the **name the limit declares** — an `asset` or an `asset group` — and never a
+`(chain, mint_id)` pair. Two limits with the same scope do **not** share a counter.
+
+An `asset group` (S22) therefore has one accumulator spanning its members. A 50.00 payment draws
+50.00 from it whether it settles on Solana or Ethereum, and `100.00 per fixed month` is a
+hundred dollars a month in total, not a hundred per chain.
+
+A limit on a member keeps its own separate accumulator, and S23 means a Solana payment draws
+both. That is the point: the group bounds the total, the member bounds where it sits.
+
+**8.1.1A · A ceiling is authority, not liquidity.** One asset held in several wallets is still
+several wallets, and moving between them costs a fee, takes time, and can fail. The charter
+bounds what may leave; it makes no claim that any amount up to that bound can be assembled in
+one place, and an implementation MUST NOT present the ceiling as a spendable balance.
+
+The consequences are deliberate:
+
+- **The charter does not route.** Which deployment settles a payment is the executor's decision.
+  A balance is external, mutable state; S2 already forbids a condition from consulting the
+  engine's own accumulated state, and a wallet balance is further out still. Choosing the chain
+  whose balance fits needs no authority from the charter, because it changes nothing the charter
+  bounds.
+- **A bridge or transfer between deployments is a payment.** It draws the allowance, and so does
+  its fee. Consolidating is not a free preliminary to spending; it is spending.
+- **§8.1.4 bites harder across chains.** A reservation is released only on proof the transaction
+  cannot land, so an in-flight bridge holds its reservation for the source chain's expiry
+  window. Cross-chain movement lengthens the time an allowance is unavailable, on top of the
+  amount it consumes.
+- **A split settlement is several payments.** An executor MAY NOT satisfy one request from two
+  deployments and report it as one. Each settlement is its own request, separately reserved and
+  separately counted, because a `count` limit that saw two chain transactions as one payment
+  would be counting something other than what it exists to bound.
+
+So a charter permitting 100.00 across two chains may be unable to make a single 100.00 payment,
+and this specification does not fix that. It is a liveness property, it belongs to whoever funds
+the wallets, and the alternative — letting the engine assume value is where it is needed — is
+how a bound becomes a guess.
+
+Worked: 60.00 on Solana, 40.00 on Ethereum, a 50.00 request. Settling on Solana is one payment
+drawing 50.00 of the monthly ceiling, and nothing in the charter prefers or forbids it. The same
+holdings against a 70.00 request fit nowhere: bridging first is a second payment with its own
+fee against the same ceiling, and the charter's answer to "can I do this in one go" is no.
 
 **8.1.2 · `amount` is a balance.** Reserved at the moment of decision. Released only on
 **definite failure**.
@@ -950,8 +1099,13 @@ and per document a header:
 
 ```
 charter_id · version · resolver_tier · resolver_version · tzdata_version
-         · timezone · resolved_assets[] · prohibitions[]
+         · timezone · resolved_assets[] · asset_groups[] · prohibitions[]
 ```
+
+`asset_groups` maps each group's name to the member names it spans, so the engine can decide
+S23 applicability — does this limit's asset cover the asset that actually settled — without
+re-deriving equivalence. The equivalence itself was checked at compile time by S22 and is not
+rechecked at evaluation: the engine reads membership, it does not infer it.
 
 Prohibitions are document-level and carry no dimension, asset, window, scope or ceiling. A
 prohibition has nothing but a name and a condition, which is the compiled form saying the same
@@ -984,6 +1138,10 @@ E2xx literal    201 unknown asset name            202 fractional digits exceed d
                 209 unknown tag                   210 duplicate declaration
                 211 alias contradicts its reference
                 212 alias is the bare symbol
+                213 asset group members disagree
+                214 duplicate asset group member
+                215 asset group with fewer than two members
+                216 asset group member is not an asset
 E3xx structure  301 operator not valid for field  302 heterogeneous group
                 303 group kind mismatch           304 overlapping exceptions
                 305 non-literal escalation ceiling 306 escalation below base
@@ -1007,6 +1165,8 @@ E5xx authenticity
                 506 charter name mismatch
 W1   warning    enumerated provenance set includes the maximum plane
 W2   warning    a child limit above its parent's ceiling is dead text
+W3   warning    asset declared and never used
+W4   warning    equivalent assets capped separately
 ```
 
 E103 exists because `deny` was an exception value before prohibition became a declaration

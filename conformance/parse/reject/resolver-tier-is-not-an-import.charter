@@ -1,0 +1,13 @@
+# expect: E201
+# S21: the charter pins the full resolver tier, which knows this asset, and
+# declares a different one. The resolver verifies declarations; it never
+# supplies them. This is the case the rule exists to make unambiguous.
+charter tier-is-not-import version 1
+resolver full@41
+timezone Europe/London
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDT_tether
+    per fixed day

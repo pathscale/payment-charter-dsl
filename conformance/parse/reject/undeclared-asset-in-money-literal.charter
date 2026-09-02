@@ -1,0 +1,10 @@
+# expect: E201
+# S21: no asset declaration at all. The identifier looks like a ticker and the
+# resolver's common tier knows it; neither of those declares it here.
+charter no-declaration version 1
+resolver common@41
+timezone Europe/London
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day

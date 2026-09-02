@@ -1,0 +1,14 @@
+# One asset, two chains, one ceiling. S22 checks symbol, issuer and decimals
+# agree; S23 makes a payment on either chain draw the group accumulator.
+charter multichain version 1
+resolver full@41
+timezone Europe/London
+
+  asset USDC_ethereum = mint://USDC/Circle/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/eip155:1
+  asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  asset group USDC_circle = { USDC_ethereum, USDC_solana }
+
+  limit monthly
+    amount 100.00 USDC_circle
+    per fixed month

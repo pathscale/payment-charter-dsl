@@ -1,0 +1,13 @@
+# expect: E201
+# S21: 8A composes limits down a chain, not declarations. The parent
+# company-wide declares USDC_circle; this child spends it without declaring
+# it in its own file.
+charter child-without-declaration version 1
+extends company-wide@7
+resolver full@41
+timezone Europe/London
+
+  limit team_daily
+    amount 500.00 USDC_circle
+    per fixed day
+    scope agent

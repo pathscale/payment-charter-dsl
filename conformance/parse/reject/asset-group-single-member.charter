@@ -1,0 +1,13 @@
+# expect: E215
+# S22: a group of one is an alias wearing a second name.
+charter degenerate-group version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  asset group USDC_circle = { USDC_solana }
+
+  limit monthly
+    amount 100.00 USDC_circle
+    per fixed month

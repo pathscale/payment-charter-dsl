@@ -1,0 +1,16 @@
+{
+  "description": "A cap can be right in aggregate and wrong in placement. The member limit refuses while most of the group allowance is untouched.",
+  "charter": "parse/accept/group-plus-per-deployment-cap.charter",
+  "clock": "2026-09-01T09:00:00Z",
+  "requests": [
+    { "amount": "25.00", "asset": "USDC_ethereum", "expect": "allow",
+      "accumulator": { "monthly": "25.00", "ethereum_exposure": "25.00" },
+      "note": "S23 - one payment draws both meters" },
+    { "amount": "1.00", "asset": "USDC_ethereum", "expect": "deny",
+      "denied_by": ["ethereum_exposure"],
+      "note": "75.00 of the group ceiling is untouched; 8.3's join takes the most restrictive" },
+    { "amount": "75.00", "asset": "USDC_solana", "expect": "allow",
+      "accumulator": { "monthly": "100.00", "ethereum_exposure": "25.00" },
+      "note": "the Solana leg never touches ethereum_exposure" }
+  ]
+}

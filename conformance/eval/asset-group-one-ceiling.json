@@ -1,0 +1,15 @@
+{
+  "description": "One asset group, one accumulator across chains. S23: a payment on either member draws the group meter.",
+  "charter": "parse/accept/asset-group-across-chains.charter",
+  "clock": "2026-09-01T09:00:00Z",
+  "requests": [
+    { "amount": "60.00", "asset": "USDC_solana", "expect": "allow",
+      "accumulator": { "monthly": "60.00" } },
+    { "amount": "40.00", "asset": "USDC_ethereum", "expect": "allow",
+      "accumulator": { "monthly": "100.00" },
+      "note": "different chain, same meter - this is the whole point of the group" },
+    { "amount": "1.00", "asset": "USDC_solana", "expect": "deny",
+      "denied_by": ["monthly"],
+      "note": "declared as two separate assets with two 100.00 limits, this would have been allowed and the month would total 200.00" }
+  ]
+}

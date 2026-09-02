@@ -1,0 +1,14 @@
+# expect: E201
+# S21 reaches every member of an inline set over the asset field. One member
+# is declared and one is not; a set is not a place a binding can hide.
+charter undeclared-in-set version 1
+resolver full@41
+timezone Europe/London
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  prohibit off_book when asset not in { USDC_circle, USDT_tether }
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day
