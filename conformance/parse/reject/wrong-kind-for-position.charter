@@ -1,0 +1,17 @@
+# expect: E308
+# S28: 'finance' is an approvers set. In the 'require N of X' slot only an
+# approvers set is admissible, and the wrong kind is a compile error rather
+# than a silent reinterpretation. The mirror case - a money literal naming an
+# approvers set - is E201.
+charter kind-confusion version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  group finance = { 9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM }
+
+  limit spend
+    amount 100.00 USDC_solana
+    per fixed day
+    escalate at least 50.00 USDC_solana require 1 of finance up to 500.00 USDC_solana within 1 days

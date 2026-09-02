@@ -1,0 +1,11 @@
+# expect: E222
+# S20.1, the other direction: a single asset may not claim to be a group.
+charter false-group version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC_solana_group = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit monthly
+    amount 100.00 USDC_solana_group
+    per fixed month

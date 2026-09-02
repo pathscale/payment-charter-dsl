@@ -7,7 +7,7 @@ timezone Europe/London
 
   group sanctioned = { country:PRK, country:IRN }
 
-  prohibit by_country when category in sanctioned
+  prohibit by_country when merchant.country in sanctioned
   prohibit by_plane when provenance is at least merchant
 
   limit spend

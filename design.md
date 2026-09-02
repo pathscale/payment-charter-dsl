@@ -263,7 +263,7 @@ The five-class taxonomy in the synthetic-stablecoin survey (internal) becomes
 something a controller can state rather than something hardcoded:
 
 ```
-prohibit off_class when asset.class is not fiat_reserve
+prohibit off_class when asset.class is not class:fiat_reserve
 ```
 
 That separates two questions currently conflated: what **we** custody, which is class A only,

@@ -9,4 +9,4 @@ timezone Europe/London
 
   group sanctioned = { country:PRK, country:IRN }
 
-  prohibit sanctions when category in sanctioned
+  prohibit sanctions when merchant.country in sanctioned

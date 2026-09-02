@@ -8,8 +8,8 @@ timezone Europe/London
   asset USDC_circle_sol = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
   asset USDC_wormhole = mint://USDC/Wormhole/A9mUU4qviSctJVPJdBJWkb28deg915LYJKrzQ19ji3FM/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
-  asset group USDC_any = { USDC_circle_sol, USDC_wormhole }
+  asset group USDC_any_group = { USDC_circle_sol, USDC_wormhole }
 
   limit monthly
-    amount 100.00 USDC_any
+    amount 100.00 USDC_any_group
     per fixed month

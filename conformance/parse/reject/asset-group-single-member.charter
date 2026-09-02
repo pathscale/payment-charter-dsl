@@ -6,8 +6,8 @@ timezone Europe/London
 
   asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
-  asset group USDC_circle = { USDC_solana }
+  asset group USDC_circle_group = { USDC_solana }
 
   limit monthly
-    amount 100.00 USDC_circle
+    amount 100.00 USDC_circle_group
     per fixed month

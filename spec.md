@@ -121,6 +121,64 @@ Whitespace is `SP`, `HT`, `CR`, `LF`. It separates tokens and is otherwise insig
 **indentation carries no meaning and newlines are not terminators.** The examples are formatted
 for reading only. A conforming document MAY be written on one line.
 
+#### 2.1.1 Layout is not semantic, and is still evidence
+
+Insignificant layout has a cost, and it is worth naming rather than discovering.
+
+Every clause is keyword-led and a limit ends at the first token that cannot continue it, so a
+*missing* mandatory clause is always caught: `window` is not optional, and a limit without one
+fails at the next declaration keyword or at end of input. The hazard is elsewhere. `escalate`
+is optional and repeated, so this parses, and does not mean what its author laid out:
+
+```
+  limit daily
+    amount 100.00 USDC_solana
+    per fixed day
+
+    escalate at least 50.00 USDC_solana require 1 of owner up to 500.00 USDC_solana within 1 days
+
+  limit weekly
+    amount 500.00 USDC_solana
+    per fixed week
+```
+
+The blank line and the author's intent say the escalation belongs to `weekly`. The grammar says
+it belongs to `daily`, because that is the limit it follows and nothing in the language reads
+whitespace. The document is well-formed, compiles, bounds correctly, and authorises a different
+policy from the one on the page. That is precisely the failure class this language exists to
+remove, arriving through the door marked *formatting*.
+
+Making layout significant is not the answer: §1 requires a JSON form, the wire carries documents
+with no layout at all, and a one-line charter MUST stay legal. Two mitigations instead, and
+together they close it:
+
+**W6 · A compiler SHOULD warn when a clause's indentation contradicts its parse.** The parser
+does not *use* indentation; nothing stops it from *seeing* it. A clause indented at or below the
+column of a preceding declaration, or separated from its parse-parent by a blank line, is
+reported as attaching to the declaration it actually attached to. Layout stays meaningless to
+the language and becomes evidence of intent to the diagnostic, which is the only place it can
+help without becoming a second grammar.
+
+**Round-tripping shows the truth.** §1.1's canonical form re-emits every clause at the
+indentation its parse implies, so passing a charter through the emitter relocates the misplaced
+`escalate` under `daily` where it actually lives. A controller reviewing canonical output is
+reviewing the parse rather than their own typing, and any authoring tool SHOULD show them that
+form before they sign it (§12.3).
+
+#### 2.1.2 Error recovery
+
+A compiler SHOULD report more than one error per run, and MUST NOT invent a parse to do so.
+
+Resynchronisation is on the **declaration keywords** — `asset`, `instrument`, `group`,
+`approvers`, `prohibit`, `limit` — which a keyword-led grammar makes both trivial and safe: after
+an error, discard tokens until one of those appears at the start of a declaration, and resume.
+Every construct is reachable from that set, so recovery never has to guess.
+
+A compiler MUST NOT emit a compiled form from a document that produced any error, and MUST NOT
+report a *later* error as though the recovered parse were the author's document — a cascade of
+consequential errors after a missing `per` says less than the first one. Reporting the first
+error per declaration, and the count suppressed, is preferred to reporting all of them.
+
 ### 2.2 Comments
 
 `#` begins a comment that runs to the next `LF` or end of input. There is no block comment.
@@ -161,6 +219,44 @@ ident = ( ALPHA | "_" ) { ALPHA | DIGIT | "_" | "-" } ;
 ```
 
 Maximum 64 characters. An identifier that equals a reserved word is a lexical error (E101).
+
+**Identifiers are lexed by maximal munch, and a keyword is recognised only when the longest
+identifier match is exactly that keyword.** This is normative, not an implementation note.
+
+Consider an attacker who mints a token with the symbol `group`. S19 then requires an alias
+beginning `group_`, so the charter contains:
+
+```
+  asset group_solana = mint://group/Attacker/…
+```
+
+Under maximal munch this is unambiguous: `[asset] [group_solana] [=] [ref]`, an ordinary asset
+declaration. A lexer that instead matched keywords eagerly would see `[asset] [group]
+[_solana]` and try to parse an `asset group` declaration, which is a different production
+reached by a token boundary the author never wrote. The same trick aims at every multi-word
+form in §2.3.
+
+Longest match settles it, and the two rules compose in the order stated: find the longest
+identifier, *then* ask whether it is a reserved word. `group_solana` is never `group`.
+
+**No identifier or literal in this language has an escape mechanism, and none has quoting.**
+There is no string type, no `"…"`, no `\`, and no numeric or Unicode escape anywhere in the
+grammar. Every lexical class is a closed character set: identifiers are ASCII letters, digits,
+`_` and `-`; symbols, issuers, mint ids, tags and addresses are similarly constrained; §2.1
+confines non-ASCII to comments.
+
+This is a deliberate and permanent property, not an omission awaiting a string type. Escapes are
+where parsers disagree, and two implementations of this specification disagreeing about what a
+document says is the failure mode §11 exists to prevent. It also removes, at a stroke,
+homoglyph and encoding tricks against S19 — a name cannot smuggle a `A` past a byte
+comparison that never decodes anything — and it is what lets §1.1's canonical form be compared
+byte-for-byte rather than after normalisation.
+
+A consequence to state rather than leave to be found: **`symbol` admits `.` and `-` (§2.10.1)
+while `ident` admits `_` and `-` but not `.`**, so an asset whose symbol contains `.` has no
+alias that can satisfy S19 and cannot be declared (E211). That fails closed, which is the right
+direction, and the alternative — an escape or a quoting form for names — costs more than the
+case is worth.
 
 ### 2.5 Numbers
 
@@ -372,6 +468,30 @@ Defined tags are `mcc` and `country`. `mcc` values MUST be exactly four digits (
 `country` values MUST be ISO 3166-1 alpha-3, uppercase (E208). An unknown tag is an error
 (E209) — the tag set is closed for the same reason the field set is.
 
+Each tag belongs to exactly one field: `mcc` to `merchant.category`, `country` to
+`merchant.country`, `class` to `asset.class`. A group of `mcc` literals compared against
+`merchant.country` is E303.
+
+> `class:fiat_reserve` is tagged for the reason the other two are, and it was a bare identifier
+> in an earlier draft. Every other identifier in a condition names a declaration in this
+> document — S21 admits no exceptions — but an asset class is supplied by the resolver and
+> declared nowhere. A bare `fiat_reserve` was therefore the one ident-shaped token in the
+> language that looked like a local name and was not, sitting in the same slot as ones that
+> were. Tagging it says where it comes from, and puts it in the same closed-vocabulary form as
+> `mcc:` and `country:`, which is what it always was.
+
+> An earlier draft had one `category` field admitting both. That was a domain error wearing a
+> field name. "What was bought" and "where the merchant is registered" are different questions,
+> a controller writing a sanctions rule is not writing a category rule, and one field with two
+> unrelated value domains means every rule about it has to say which it meant.
+>
+> The fields are named `merchant.*` because that is where the data comes from, and the name is
+> the warning (see W5). An MCC is assigned by the acquirer when the merchant is onboarded, and a
+> registered country is likewise the merchant's own claim as the acquirer recorded it. Neither
+> is chosen by the merchant per transaction, which makes them far better than a merchant-supplied
+> amount — and neither is stated by the principal, which is what matters when deciding whether a
+> rule may *unlock* on one.
+
 ## 3 · Grammar
 
 ```
@@ -431,7 +551,8 @@ negation       = "not" negation | primary ;
 primary        = "(" condition ")" | comparison ;
 comparison     = field operator value ;
 
-field          = "counterparty" | "category" | "asset" | "asset.class"
+field          = "counterparty" | "asset" | "asset.class" | "instrument"
+               | "merchant.category" | "merchant.country"
                | "provenance" | "provenance.recipient" | "provenance.amount"
                | "provenance.asset" | "provenance.venue"
                | "date" ;
@@ -444,7 +565,8 @@ value          = ident | literal | date-lit | plane | asset-class
 value-item     = ident | literal | plane | asset-class ;
 
 plane          = "principal" | "agent" | "merchant" | "network" ;
-asset-class    = ident ;   (* validated against the resolver's class set *)
+asset-class    = "class" ":" class-name ;    (* closed, supplied by the resolver *)
+class-name     = LOWER-ALPHA { LOWER-ALPHA | "_" } ;
 ```
 
 The grammar is LL(1) given §2.3's multi-word tokens. Every declaration and every clause within
@@ -518,9 +640,10 @@ Each field admits a fixed set of operators and value shapes. Anything else is a 
 | Field | Operators | Value |
 |---|---|---|
 | `counterparty` | `is`, `is not`, `in`, `not in` | address, or group of addresses |
-| `category` | `is`, `is not`, `in`, `not in` | `mcc:` or `country:` tagged, or group thereof |
+| `merchant.category` | `is`, `is not`, `in`, `not in` | `mcc:` tagged, or group thereof |
+| `merchant.country` | `is`, `is not`, `in`, `not in` | `country:` tagged, or group thereof |
 | `asset` | `is`, `is not`, `in`, `not in` | `asset` or `asset group` ident declared in this document (S21), or set thereof |
-| `asset.class` | `is`, `is not`, `in`, `not in` | class name, or set thereof |
+| `asset.class` | `is`, `is not`, `in`, `not in` | `class:` tagged, or set thereof |
 | `instrument` | `is`, `is not`, `in`, `not in` | `instrument` ident declared in this document (S21), or set thereof |
 | `provenance` | `is`, `is not`, `in`, `not in`, `is at least` | plane, or set of planes |
 | `provenance.recipient` | as `provenance` | as `provenance` |
@@ -684,7 +807,9 @@ towards permitting, and it looks exactly like protection while providing none.
 
 **S19 · An asset alias MUST NOT misrepresent what it binds.** The alias MUST begin with the
 `symbol` segment of the reference it binds, byte-for-byte and case-sensitively, and anything
-following it MUST begin with `_` (E211).
+following it MUST begin with `_` (E211). An `asset group`'s name is subject to S19 and S20
+against the shared `symbol` of its members, since it appears in exactly the same money-literal
+position as an alias and makes exactly the same claim.
 
 > S7 verifies every segment of a reference against the resolver. Nothing verified the *name*,
 > which is the only part of the binding a reader sees at the point where money is actually
@@ -695,6 +820,26 @@ following it MUST begin with `_` (E211).
 
 **S20 · An alias MUST NOT be exactly the symbol** (E212). It MUST carry a `_` and a non-empty
 qualifier: `USDC_circle`, `USDC_wormhole`, never bare `USDC`.
+
+**S20.1 · An `asset group`'s name MUST end with `_group`, and an `asset`'s name MUST NOT**
+(E222). `USDC_circle_group` spans deployments; `USDC_solana` is one.
+
+> Apply §7.1's test to the money position and it separates the two halves of a plausible
+> proposal. A suffix must buy a distinction the position does not already make.
+>
+> `USDC_solana_asset` buys nothing. Every identifier in a money literal is an asset — the
+> grammar admits nothing else there — so the suffix is length with no information, which is the
+> Hungarian notation §7.1 rejects for `approvers` and `group`.
+>
+> `USDC_circle_group` buys a real one. `amount 100.00 X` means something materially different
+> depending on whether X is one deployment or four: the same line is a cap on one chain or a cap
+> across all of them, and that is the difference between authorising a hundred dollars and
+> authorising a hundred on each. The position does not disclose it and the author's qualifier
+> does not either — `USDC_circle` and `USDC_solana` look alike and are not.
+>
+> This is S20's own argument one level up. S20 says a reader must not be able to think "this is
+> USDC" without thinking "which USDC". S20.1 says they must not be able to think "which USDC"
+> without knowing whether the answer is one or several.
 
 > The rest of this specification is built on the claim that **a ticker is a label and a mint is
 > an identity** — that "USDC" names a string anyone can mint on Solana for a few cents, and only
@@ -749,11 +894,11 @@ distinct (E214), and there MUST be at least two (E215).
   asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
   asset USDC_ethereum = mint://USDC/Circle/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/eip155:1
 
-  asset group USDC_circle = { USDC_solana, USDC_ethereum }
+  asset group USDC_circle_group = { USDC_solana, USDC_ethereum }
 ```
 
 The group is one asset for the purposes of a limit: one accumulator, one ceiling **across every
-member** (§8.1.1). `amount 100.00 USDC_circle per fixed month` is a hundred dollars a month in
+member** (§8.1.1). `amount 100.00 USDC_circle_group per fixed month` is a hundred dollars a month in
 total, which is what a controller who says "a hundred dollars of USDC a month" means.
 
 **S23 · A limit applies to a request when both hold:** the request's settlement asset is the
@@ -862,6 +1007,135 @@ joined by an `asset group`, SHOULD warn.** Their ceilings sum, so a controller w
 > compiler cannot tell that apart from the mistake, so it says what the document authorises in
 > total and names the two declarations. Silence is the one unacceptable option: the failure
 > is invisible precisely because each limit, read alone, says exactly what its author intended.
+**W5 · An exception that *raises* a ceiling on a condition over `merchant.*` SHOULD warn.** The
+data originates with the acquirer, not the principal. Selecting which bounded limit applies is
+fine; lifting a bound is the §2b failure in a quieter costume.
+
+> The distinction is exact, and it is the difference between two clauses that look alike:
+>
+> ```
+>   limit routine
+>     amount 50.00 USDC_circle
+>       except unlimited when merchant.category in ci_vendors   # warns
+>     per fixed day
+>
+>   limit ci_spend
+>     amount 500.00 USDC_circle
+>     for merchant.category in ci_vendors                        # does not warn
+>     per fixed day
+> ```
+>
+> The first says "if the merchant is categorised as a CI vendor, remove the cap". The bound is
+> then contingent on a code the merchant's acquirer assigned, and merchants have been
+> miscategorised both by accident and on purpose for as long as MCCs have existed. The second
+> says "CI spending has its own budget of 500.00" — the category chooses *which* literal bound
+> applies, and every branch still lands on a number in the file.
+>
+> A `for` clause therefore never warns, however merchant-derived its condition: S24 means the
+> worst a wrong category can do is route a payment to the wrong bounded bucket, or to none, in
+> which case it is denied. An `except` raising a ceiling has no such floor under it.
+>
+> This applies to a raise, not to a reduction. `except 5.00 USDC_circle when merchant.category
+> in gambling` tightens on the same untrusted data and is exactly what a controller should be
+> encouraged to write.
+
+### 7.1 Which names carry a mandated affix, and why only those
+
+Two declaration kinds constrain their identifiers: `asset` / `asset group` (S19, S20) and
+`instrument` (S27). No other kind does, and the difference is not stylistic.
+
+A name needs a mandated affix exactly when **both** hold:
+
+1. **There is an external identifier it could be confused with.** `USDC` is a ticker the whole
+   world uses for something specific; `visa` is a card network. A bare one reads as a claim
+   about that thing.
+2. **The declaration contains that identifier, so a compiler can check the two agree.** An
+   `asset` declaration carries `symbol`; an `instrument` declaration carries `network` or a
+   CAIP-2 namespace. Without this the rule would be advice, not a rule.
+
+Both conditions fail for every other kind. `approvers finance`, `group groceries`, `prohibit
+holiday_freeze` and `limit petty_cash` are author-chosen labels for author-chosen sets. There
+is no `finance` out in the world for `finance` to misdescribe, and nothing in the declaration to
+check a suffix against. Requiring `finance_approvers` would be Hungarian notation: noise that
+buys no check.
+
+`require 2 of finance` is unambiguous because `of` carries the reading, and §5.1's flat
+namespace with E210 already prevents a `group` and an `approvers` set sharing a name.
+
+#### 7.1.1 A hostile token named after a declaration
+
+Anyone can mint a token and call it whatever they like, so assume an attacker mints one whose
+symbol is `finance`, aiming at a charter that declares `approvers finance = { alice, bob }`.
+Three rules already stand between that and a confusion, and it is worth being explicit about
+which does what.
+
+**S20 stops the direct collision.** `asset finance = mint://finance/Attacker/…` is E212: an
+alias may never be the bare symbol. The attacker's token cannot take the name it is aiming at.
+`asset finance_pool = …` is legal, and is a different identifier.
+
+**§5.1 stops the indirect one.** One flat namespace, and redeclaring a name across kinds is
+E210. A name in a conforming charter has exactly one declaration and therefore exactly one kind.
+
+**S28 stops the substitution.** Every position that takes an identifier requires a specific
+kind, so the wrong kind is a compile error rather than a silent reinterpretation:
+
+| Position | Required kind | Error |
+|---|---|---|
+| the identifier of a money literal | `asset` or `asset group` | E201 |
+| `require N of X` | `approvers` | E308 |
+| value of an `asset` comparison | `asset` or `asset group` | E201 |
+| value of an `instrument` comparison | `instrument` | E217 |
+| value of a `counterparty` or `merchant.*` comparison | `group`, of matching tag kind | E303 |
+
+**S27 · An instrument's name MUST NOT misrepresent its reference.** For a `card-ref` the name
+MUST begin with the `network` segment; for a `wallet-ref`, with the CAIP-2 namespace. In both
+cases a qualifier MUST follow (E211, E212 — the same two rules as S19 and S20, applied to the
+kind that satisfies §7.1's test for the same reason).
+
+`instrument visa_gold = card://visa/tok_g7h8i9` is legal. `instrument visa_gold =
+card://mastercard/tok_g7h8i9` is E211: it is S19's lie with a card in place of a mint, and it is
+worth as much to an attacker. Bare `instrument visa = …` is E212 as soon as there is more than
+one Visa card, and forbidding it unconditionally costs nothing.
+
+**S28 · An identifier's declaration kind MUST match the kind its position requires**, per the
+table above. There is no position in the grammar where two kinds are both acceptable, and none
+where an undeclared name is acceptable (S21).
+
+So `require 2 of finance_pool` is E308 and `amount 100.00 finance` is E201. The attack needs a
+position where the language would accept either a set of people or a token, and the language
+does not contain one.
+
+#### 7.1.2 What the parser does with it
+
+Nothing. That is the point, and it is why S28 is a static-semantics rule rather than a grammar
+one.
+
+The lexer emits `finance` as an ident and knows nothing else about it. The parser places that
+ident in a slot whose expected kind is fixed by the **grammar position** — `require uint "of"
+ident` is an approver-set slot, `money = decimal ident` is an asset slot — and it does so without
+consulting a single declaration. There is no lookahead, no symbol table, and no ambiguity to
+resolve: an attacker cannot make `require 2 of finance` parse as anything other than a request
+for an approver set, because no other production reaches that position.
+
+§5.2 already requires name resolution to be a **separate pass**, and this is why. The parse
+produces a tree with typed holes; resolution fills them from the one declaration table and
+compares the declaration's kind against the hole's. A mismatch is E201, E217, E303 or E308
+depending on the hole, and it is reported with the span of the offending identifier and the
+declaration it actually found.
+
+Two practical consequences for an implementation:
+
+- **Declaration order cannot matter** (§5.2), so a hostile declaration placed after its use has
+  no different effect from one placed before.
+- **A parse error and a kind error are never confused.** A charter that fails S28 is
+  syntactically valid and semantically rejected, which is the diagnostic a reviewer needs: the
+  document is well-formed and says something the language will not permit.
+
+What remains is a **human** confusion rather than a machine one: a reviewer skimming
+`100.00 finance_pool` and reading the word "finance". The residual is small — money positions
+always name assets, and S19 guarantees the name begins with the symbol the resolver confirms —
+but it is not zero, and it is the reason `asset` and `instrument` are the two kinds whose names
+are constrained at all. A reviewer's misreading is the failure mode S19 and S20 exist to narrow.
 
 **Emitted, not checked:** the static ceiling per limit per path (§9). A document whose bound
 cannot be computed does not compile.
@@ -1240,6 +1514,8 @@ E2xx literal    201 unknown asset name            202 fractional digits exceed d
                 217 unknown instrument name        218 malformed instrument reference
                 219 no limit applies to this request
                 220 credential in an instrument reference
+                221 identifier declared as the wrong kind for its position
+                222 asset group name lacks _group, or an asset name carries it
 E3xx structure  301 operator not valid for field  302 heterogeneous group
                 303 group kind mismatch           304 overlapping exceptions
                 305 non-literal escalation ceiling 306 escalation below base
@@ -1265,6 +1541,8 @@ W1   warning    enumerated provenance set includes the maximum plane
 W2   warning    a child limit above its parent's ceiling is dead text
 W3   warning    asset declared and never used
 W4   warning    equivalent assets capped separately
+W5   warning    an exception raises a ceiling on merchant-derived data
+W6   warning    a clause's indentation contradicts its parse
 ```
 
 E103 exists because `deny` was an exception value before prohibition became a declaration

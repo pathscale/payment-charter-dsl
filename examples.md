@@ -47,7 +47,7 @@ timezone America/New_York
 
   limit food
     amount 200.00 USDC_circle
-    for category in groceries
+    for merchant.category in groceries
     per fixed week
     scope account
 ```
@@ -65,7 +65,7 @@ by someone who has written down only that one rule, and it is the safe one.
 
 ```
   limit games
-    amount unlimited when category is video_games and offer.discounted    # REJECTED
+    amount unlimited when merchant.category is video_games and offer.discounted    # REJECTED
 ```
 
 Two independent refusals, and the second is the one that matters.
@@ -215,7 +215,7 @@ Four properties fall out, and each is a rule already stated rather than a featur
 - **Every payment draws down every level.** H2: a leaf agent's $30 debits the leaf, the manager,
   the department and the company. There is no accounting in which the department's spending is
   invisible to the CFO.
-- **The CFO's prohibitions are absolute.** `prohibit sanctions when category in sanctioned` at
+- **The CFO's prohibitions are absolute.** `prohibit sanctions when merchant.country in sanctioned` at
   the root holds for every agent beneath it, and no department exception and no local quorum
   lifts it (H6). A department may add prohibitions of its own; it cannot narrow one it inherited.
 - **A tightening propagates immediately, mid-window.** The CFO lowering the company cap on the
@@ -260,7 +260,7 @@ two declarations the resolver reports as the same asset, capped separately.
   asset USDC_ethereum = mint://USDC/Circle/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/eip155:1
   asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
-  asset group USDC_circle = { USDC_ethereum, USDC_solana }
+  asset group USDC_circle_group = { USDC_ethereum, USDC_solana }
 
   limit monthly
     amount 100.00 USDC_circle
@@ -431,7 +431,7 @@ timezone Europe/London
   group sanctioned    = { country:PRK, country:IRN }
   approvers treasury  = { cfo, controller, deputy }
 
-  prohibit sanctions when category in sanctioned
+  prohibit sanctions when merchant.country in sanctioned
 
   limit company_monthly
     amount 250000.00 USDC_circle
@@ -461,7 +461,7 @@ timezone Europe/London
 
   limit dept_monthly
     amount 40000.00 USDC_circle
-      except 60000.00 USDC_circle when category in cloud
+      except 60000.00 USDC_circle when merchant.category in cloud
     per fixed month
     escalate when exhausted require 1 of eng_leads up to 60000.00 USDC_circle within 1 days
 ```
@@ -503,7 +503,7 @@ timezone Europe/London
 
   asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
-  group ci_vendors = { mcc:7372 }
+  group ci_vendors = { 9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM, 3n1LSbDqQBTfLQ6RCLDDGvVBqLTKZUnJDkAcHZzWyHAr }
 
   prohibit merchant_supplied when provenance is at least merchant
 
@@ -513,9 +513,21 @@ timezone Europe/London
 
   limit routine
     amount 50.00 USDC_circle
-      except unlimited when category in ci_vendors
+      except unlimited when counterparty in ci_vendors
     per fixed day
 ```
+
+**`ci_vendors` is a set of addresses, not a set of MCCs, and an earlier draft had it the other
+way round.** As `{ mcc:7372 }` this clause read "if the merchant is categorised as a CI vendor,
+remove the cap" — and an MCC is assigned by the merchant's acquirer, not stated by the
+principal. That is §2b arriving in a quieter costume: the predicate that lifts the bound sits
+under the control of someone other than the person the bound protects. W5 warns on exactly this
+shape.
+
+As a set of addresses the controller wrote down, the same clause is principal-stated and safe,
+which is the same repair §2c made for the wishlist. **Merchant-derived data may select which
+bounded limit applies; it must not remove a bound.** A category-shaped budget is written as its
+own limit with `for merchant.category in …`, where every branch still lands on a literal.
 
 Both interesting lines:
 
@@ -530,7 +542,7 @@ Both interesting lines:
   Note what moving this out of `routine` bought. As an exception it constrained one limit, so
   the same danger had to be restated in every limit the leaf declared, and a limit added later
   would silently not have it. As a prohibition it is one line covering the whole document and
-  everything beneath it (H6). It also composes with `except unlimited when category in
+  everything beneath it (H6). It also composes with `except unlimited when counterparty in
   ci_vendors` without S4 complaining, where two exception clauses that overlap on a CI vendor
   with merchant-stated provenance would have been E304.
 
