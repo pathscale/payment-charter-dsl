@@ -1,0 +1,19 @@
+# above and at least are the same trigger kind, so they collide on one limit (S17)
+# but are fine on different limits.
+charter both-forms version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers owner = { sam }
+
+  limit strict_edge
+    amount 100.00 USDC
+    per fixed day
+    escalate at least 50.00 USDC require 1 of owner up to 500.00 USDC within 1 days
+
+  limit loose_edge
+    amount 100.00 USDC
+    per fixed week
+    escalate above 50.00 USDC require 1 of owner up to 500.00 USDC within 1 days

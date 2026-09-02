@@ -13,6 +13,7 @@ conformance/
   canonical/*.charter       + expected compiled bytes
   eval/*.json               charter + request sequence → expected decisions
   asset-ref/                the mint:// and unit:// sub-parser, on its own
+  authenticity/             signature, key, digest, version and validity cases (spec §12)
 ```
 
 ## Reject cases name their error
@@ -24,6 +25,32 @@ first line, because a provenance header may come first. The harness scans that b
 This is the point of the directory. A test that passes because the *wrong* error fired is worse
 than no test, so the suite asserts the identity of a refusal rather than merely that one
 occurred.
+
+## Eval vector shape
+
+An `eval/*.json` file names a charter, a starting clock, and a sequence of requests with the
+decision each MUST produce:
+
+```json
+{
+  "description": "what this vector is for",
+  "charter": "parse/accept/petty-cash-at-least.charter",
+  "clock": "2026-09-01T09:00:00-04:00",
+  "requests": [
+    { "amount": "50.00", "asset": "USDC", "agent": "a1", "expect": "escalate",
+      "escalation": { "limit": "petty_cash", "trigger": "at least" } }
+  ]
+}
+```
+
+`expect` is `allow`, `escalate` or `deny`. A request may carry `at` to advance the clock, and a
+sequence entry may be an `install` rather than a request, which replaces the charter mid-run —
+that is how the §8.4A window-continuity cases are written. `note` is for the reader and carries
+no assertion.
+
+A denial SHOULD assert `denied_by` naming every rule that refused, since §8.3 requires reporting
+all of them rather than the first. An escalation SHOULD assert its trigger, because "escalated"
+for the wrong reason is the same class of false pass as the wrong error code on a reject case.
 
 ## Where the cases come from
 

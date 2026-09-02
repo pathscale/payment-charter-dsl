@@ -66,7 +66,8 @@ line. Then declarations, grouped by kind in this order:
 1. `asset`
 2. `group`
 3. `approvers`
-4. `limit`
+4. `prohibit`
+5. `limit`
 
 Within each kind, declarations are sorted by identifier, ascending by byte value. Declaration
 order is not semantic (§5), so sorting is what makes the output a function of the meaning rather
@@ -77,8 +78,10 @@ separated.
 **Within a limit,** clauses appear in grammar order: dimension, its `except` clauses, `per`,
 `scope`, then `escalate`. `except` clauses are sorted ascending by byte value of their emitted
 text — S4 forces them disjoint, so their order carries no meaning. `escalate` clauses are sorted
-with `above` triggers first, ascending by threshold, and `when exhausted` last; §8.4 admits at
-most one of the latter.
+with threshold triggers first, ascending by threshold, and `when exhausted` last. S17 makes
+`above` and `at least` one trigger kind and S15 admits at most one of each kind per limit, so no
+two threshold triggers can coexist on a limit and the sort never has to break a tie between
+them.
 
 **Indentation.** Header at column 0. Declarations at 2 spaces. Clauses within a `limit` at 4.
 `except` clauses at 6.
@@ -125,18 +128,25 @@ instrument  is  least  limit  minute  minutes  month  not  of  or  and
 per   charter require  resolver  rolling  scope  second  seconds  timezone
 to    up  version  week  when  within  year  common  counterparty  before
 after  date  category  provenance  principal  merchant  network
-extends  unlimited  policy
+extends  unlimited  policy  prohibit
 ```
 
 `policy` is reserved but is not a keyword: it was the opening keyword in an earlier draft, and
 reserving it turns a stale document into a clear error rather than a confusing one.
 
+`deny` is reserved and is **no longer a value**. It was an exception value in an earlier draft
+(`except deny when …`); prohibition is now its own declaration (§3, §8.2.1). Reserving the word
+turns a stale document into E103 rather than a parse error at an unhelpful position.
+
 Reserved words are lowercase and MUST NOT be used as identifiers. Matching is
 case-sensitive; `Limit` is not a keyword and is a valid identifier.
 
-Multi-word operators — `is not`, `not in`, `is at least`, `up to`, `when exhausted` — SHOULD be
-recognised by the lexer as single tokens. A parser that does this has no ambiguity between the
-`not` of negation and the `not` of an operator.
+Multi-word operators — `is not`, `not in`, `is at least`, `at least`, `up to`, `when exhausted`
+— SHOULD be recognised by the lexer as single tokens. A parser that does this has no ambiguity
+between the `not` of negation and the `not` of an operator. `is at least` and `at least` are
+distinct tokens: the first is a comparison operator on a field (§6), the second is an escalation
+trigger (§3). Longest match wins, so `is at least` is never lexed as `is` followed by
+`at least`.
 
 ### 2.4 Identifiers
 
@@ -345,19 +355,22 @@ charter        = "charter" ident "version" uint
 
 resolver-tier  = "common" | "full" ;
 
-declaration    = asset-decl | group-decl | approvers-decl | limit-decl ;
+declaration    = asset-decl | group-decl | approvers-decl
+               | prohibit-decl | limit-decl ;
 
 asset-decl     = "asset" ident "=" ( mint-ref | unit-ref ) ;
 group-decl     = "group" ident "=" "{" literal { "," literal } [ "," ] "}" ;
 approvers-decl = "approvers" ident "=" "{" ident { "," ident } [ "," ] "}" ;
+
+prohibit-decl  = "prohibit" ident "when" condition ;
 
 limit-decl     = "limit" ident dimension window [ scope ] { escalation } ;
 
 dimension      = "amount" money { amount-exc }
                | "count"  uint  { count-exc } ;
 
-amount-exc     = "except" ( money | "deny" | "unlimited" ) "when" condition ;
-count-exc      = "except" ( uint  | "deny" ) "when" condition ;
+amount-exc     = "except" ( money | "unlimited" ) "when" condition ;
+count-exc      = "except" uint "when" condition ;
 
 window         = "per" ( "rolling" duration
                        | "fixed" cal-unit [ "in" tz ] ) ;
@@ -370,7 +383,7 @@ escalation     = "escalate" trigger
                  "up to" ( money | uint )
                  [ "within" duration ] ;
 
-trigger        = "above" ( money | uint )
+trigger        = ( "above" | "at least" ) ( money | uint )
                | "when exhausted" ;
 
 condition      = disjunction ;
@@ -401,7 +414,7 @@ a limit is keyword-led, so a limit ends at the first token that cannot continue 
 terminator and no significant layout.
 
 **Operator precedence** in conditions is `not` > `and` > `or`, left-associative. Parentheses
-override. A parser MUST NOT rely on evaluation order for meaning (§8.2).
+override. A parser MUST NOT rely on evaluation order for meaning (§8.2.2).
 
 ## 4 · Example
 
@@ -416,10 +429,11 @@ timezone Europe/London
   group hardware          = { mcc:5045, mcc:5732 }
   approvers finance       = { alice, bob, carol }
 
+  prohibit holiday_freeze when date after 2026-12-20 and date before 2027-01-02
+
   limit daily_spend
     amount 500.00 USDC
       except 5000.00 USDC when counterparty in trusted_suppliers
-      except deny         when date after 2026-12-20 and date before 2027-01-02
     per fixed day in Europe/London
     scope agent
     escalate above 200.00 USDC  require 2 of finance up to 5000.00 USDC within 1 days
@@ -519,14 +533,30 @@ table, which contains no such field. A compiler MUST NOT provide an extension th
 shown to overlap — intersecting date ranges, groups sharing a member, one condition subsuming
 another, or any pair a compiler cannot separate — the document is rejected naming both (E304).
 
+> **Prohibitions are exempt from S4** and are exempt in both directions: two prohibitions may
+> overlap each other, and a prohibition may overlap any exception. Disjointness exists because
+> two *ceilings* covering one request have no defined composition. A prohibition is not a
+> ceiling and composes with everything by dominating it (§8.2.1), so there is nothing to
+> resolve. Requiring disjointness here would be actively harmful: it would force an author who
+> wants "5000 for trusted suppliers, but never during the freeze" to thread `and not
+> <freeze-condition>` through every exception, and a prohibition that has to be repeated in
+> every clause it constrains is one that will eventually be forgotten in one of them.
+
 > Forcing disjointness rather than resolving by priority is the strict choice, and it is
 > reversible: a later version can relax it without invalidating any charter written under it,
 > whereas the reverse breaks documents already deployed.
 
 **S5 · Every limit MUST have a computable static ceiling.** For `amount`, the maximum over the
 base value and every exception value, in minor units of the limit's asset. For `count`, the
-maximum integer. `deny` contributes nothing. An escalation raises this to its `up to` value,
-which MUST be a literal (E305) and MUST be greater than or equal to the base (E306).
+maximum integer. An escalation raises this to its `up to` value, which MUST be a literal (E305)
+and MUST be greater than or equal to the base (E306).
+
+> Prohibitions do not enter the calculation at all. They can only remove authority, never grant
+> it, so the bound computed while ignoring every prohibition is still a sound upper bound — and
+> a bound that is sound when you ignore a construct is a bound nobody has to reason about that
+> construct to trust. This is the structural reason prohibition is a declaration and not a value
+> in the ceiling slot: as a value it needed a special case here, in §8.4 and in H6, and three
+> special cases for one production is the language telling you the shape is wrong.
 
 **S6 · A limit's asset is fixed.** Every money literal in one limit — base, exceptions and
 escalation ceilings — MUST name the same declared asset (E307). Limits over different assets
@@ -572,7 +602,24 @@ escalations on one limit have no defined composition.
 
 **S16 · A document MUST declare at least one limit** (E311). An empty charter is more likely a
 truncated file than an intent to permit everything, and permitting everything MUST be
-impossible to express by omission.
+impossible to express by omission. Prohibitions do not satisfy S16: a document consisting only
+of prohibitions permits everything it did not think to forbid, which is the deny-list posture
+this language exists to refuse.
+
+**S17 · At most one escalation per trigger kind per limit, and `above` and `at least` are the
+same kind** (E310). A limit carrying both `escalate above 50.00 USDC` and `escalate at least
+50.00 USDC` has two thresholds meeting at a boundary and no defined composition on it. S15
+states the rule; this fixes which triggers collide under it.
+
+**S18 · A prohibition MUST be reachable** (E317). A prohibition whose condition the compiler can
+prove unsatisfiable — an empty date range, a group with no members, a conjunction of a field
+comparison and its own negation — is rejected rather than compiled to nothing. Every other
+construct in this language fails towards refusing; a prohibition that silently never fires fails
+towards permitting, and it looks exactly like protection while providing none.
+
+> Note the deliberate asymmetry with S4. A prohibition may overlap anything, but it may not
+> overlap *nothing*. Overlap is composition, which is defined; unreachability is a mistake,
+> which is not.
 
 **Emitted, not checked:** the static ceiling per limit per path (§9). A document whose bound
 cannot be computed does not compile.
@@ -610,7 +657,33 @@ settled.
 transition an ambiguous local time resolves to its **first** occurrence and a nonexistent one to
 the instant the offset changes; a 23-hour and a 25-hour day each receive one allowance.
 
-### 8.2 Evaluating one limit
+### 8.2 Evaluating a request
+
+Prohibitions are evaluated first and independently of every limit. Only if none holds is any
+limit consulted.
+
+#### 8.2.1 Prohibitions
+
+Evaluate every prohibition in the document, and in every document in the chain (§8A). If any
+condition holds, the request is **denied**, the outcome names every prohibition that held, and
+evaluation stops. No limit is examined, no accumulator moves, and no quorum is offered.
+
+A prohibition is **final**. It is not a ceiling of zero and MUST NOT be modelled as one:
+
+- A ceiling of zero is exhaustion, and §8.4 turns exhaustion into an escalation where one is
+  declared. A prohibition must never become escalatable, because "you may not pay this
+  counterparty" and "you have run out of money for this month" are different sentences and only
+  the second is a reasonable thing to ask a human to override at 2am.
+- A ceiling participates in H1's minimum. A prohibition does not participate in anything; it
+  short-circuits.
+
+Because prohibitions never touch an accumulator, a prohibited request costs nothing. An agent
+repeatedly attempting a prohibited payment is refused every time and consumes no allowance —
+including no `count`, which §8.1.3 otherwise never releases. This is deliberate: `count` exists
+to bound retry against a *permitted* control, and letting a prohibition burn it would let an
+attacker exhaust the legitimate rate budget with requests that were never going to be paid.
+
+#### 8.2.2 Evaluating one limit
 
 1. Collect every exception whose condition holds for this request.
 2. **None** — the base value applies.
@@ -621,8 +694,25 @@ S4 rejects provable overlap at compile time; case 4 exists for overlap that coul
 statically. Resolving by declaration order is forbidden: an author who writes two exceptions
 believing them exclusive would otherwise be paid by whichever the parser reached first.
 
-If the resolved value is `deny`, the limit denies. Otherwise the limit compares
-`reserved + requested` against the value.
+The limit then compares `reserved + requested` against the resolved value. Every resolved value
+is a ceiling; there is no longer a value that means refusal, because refusal is §8.2.1.
+
+#### 8.2.3 Escalation triggers
+
+A limit's escalations are tested against the **requested** amount, before accumulation:
+
+- `above V` fires when `requested > V`, strictly.
+- `at least V` fires when `requested >= V`.
+- `when exhausted` fires when `reserved + requested` exceeds the resolved ceiling (§8.4).
+
+Both threshold forms exist because English does not agree with itself here and the difference is
+one payment. "Anything of fifty dollars or more needs my approval" is `at least 50.00`; written
+as `above 50.00` it lets a payment of exactly 50.00 through unattended, which is the single
+transaction the controller was most clearly thinking about when they wrote the rule. A language
+that offers only `above` guarantees that class of off-by-one, and guarantees it silently —
+nothing is malformed, the charter compiles, and the boundary payment is simply not the one the
+author meant. Neither form is a default and neither is spelled `>=`; the author has to say which
+edge they mean.
 
 ### 8.3 Composing limits
 
@@ -635,6 +725,9 @@ allow  <  escalate  <  deny
 Any limit denying denies. Otherwise any limit escalating escalates. A denial reports every
 limit that denied, not the first.
 
+A prohibition (§8.2.1) does not enter this join. It is decided before the join runs and there is
+nothing for it to lose to.
+
 ### 8.4 Exhaustion is not prohibition
 
 Two refusals that MUST behave differently:
@@ -642,11 +735,67 @@ Two refusals that MUST behave differently:
 - **Exhaustion** — `reserved + requested` exceeds the resolved value. If the limit declares a
   `when exhausted` escalation, the outcome is **escalate**, bounded by its `up to` ceiling.
   Otherwise **deny**.
-- **`deny` as a resolved value** — the author wrote a prohibition. **Final.** No escalation
-  lifts it, and a quorum MUST NOT be offered.
+- **Prohibition** — the author wrote `prohibit` (§8.2.1). **Final.** No escalation lifts it, and
+  a quorum MUST NOT be offered.
 
 Collapsing these makes an empty allowance unappealable and an explicit prohibition negotiable,
-both backwards.
+both backwards. Keeping them in separate constructs rather than separate values of one construct
+is what makes the distinction survive a careless edit: an author cannot accidentally turn a
+prohibition into a ceiling by changing a number, because there is no number there to change.
+
+### 8.4A Replacing a charter mid-window
+
+A charter is edited while its windows are open. A CFO tightening the company cap on the 14th
+does so with two weeks of the month already spent, and what happens to that spending is a
+semantic decision, not an implementation detail.
+
+**The rule: an edit changes the ceiling. It never changes the meter.**
+
+A limit's accumulator is keyed `(limit id, scope value, asset, window instance)` (§8.1.1) and a
+window instance is identified by the wall-clock interval it covers, not by the charter version
+that created it. Installing a new charter version therefore re-points every limit at a new
+ceiling and leaves every accumulator exactly where it was.
+
+Consider a `100.00 USDC per fixed month` limit with `80.00` already reserved:
+
+| Edit | Result | Why this is the only safe answer |
+|---|---|---|
+| Lowered to `50.00` | Everything denies until the window rolls | The controller *reduced* authority. Any rule under which they instead handed the agent a fresh allowance is a rule where tightening a limit increases spending. |
+| Raised to `200.00` | `120.00` remains this month | What the controller meant. Not `200.00` more. |
+| Unchanged | `20.00` remains | Editing an unrelated limit must not disturb this one. |
+
+The rejected alternative is restarting the window on edit. It fails in the first row and fails
+catastrophically: the agent spends `130.00` in a calendar month in which the controller twice
+said `100.00` and then said `50.00`. It also hands anyone who can trigger a charter update a
+general-purpose allowance reset, which is a spending exploit that requires no signature forgery
+at all — just the ability to make the controller save the file.
+
+**8.4A.1 · A changed window specification is a superposition.** If the new version alters a
+limit's `per` clause — `fixed month` to `fixed week`, `rolling 7 days` to `rolling 24 hours`,
+or the timezone — there is no corresponding accumulator to carry forward. The superseded limit
+therefore continues to be enforced against its own accumulator until its final window closes,
+alongside the new one. Both are live; §8.3's join means the most restrictive wins.
+
+Without this, changing `fixed month` to `fixed week` is a window reset, and the exploit closed
+in the table above reopens through a different clause.
+
+**8.4A.2 · A removed or renamed limit keeps enforcing until its window closes.** A limit present
+in version *n* and absent in version *n+1* is not deleted; it stops accruing new authority and
+continues to deny against what it already accumulated, until its final window ends.
+
+This is the same mechanism, and it closes the same hole. A limit id is a name, so renaming
+`petty_cash` to `petty_cash_v2` would otherwise produce a fresh accumulator and a fresh
+allowance — a rename as an allowance reset. Under this rule the retired `petty_cash` still holds
+its `80.00` against its `100.00` for the rest of the month, so the rename buys nothing.
+
+Note that S3 ("no construct removes or disables a limit") governs what a *document* can say.
+8.4A.2 governs what a *replacement* can do, which is the same principle applied across versions:
+authority already spent is not recoverable by editing the thing that measured it.
+
+**8.4A.3 · Hierarchy inherits this unchanged.** Each level's accumulator is its own (H2), so a
+parent tightening mid-window binds every child immediately through H1's minimum, and no child
+gains anything from the parent's edit. A department that has spent its `80.00` under a company
+cap the CFO has just lowered is over its cap, at once, everywhere.
 
 ### 8.5 What human authorization means for the bound
 
@@ -715,8 +864,18 @@ means something narrower than it reads.
 by omission: an intent naming an asset with no declared cap at every level is denied (E315),
 not permitted by default. A child cannot introduce an asset its parent never allowed.
 
-**H6 · `deny` propagates downward and cannot be lifted.** A prohibition at any level is final
-for every level beneath it, and no child exception and no quorum reaches it (§8.4).
+**H6 · Prohibitions propagate downward and cannot be lifted.** A `prohibit` declaration at any
+level holds for every level beneath it. No child exception and no quorum reaches it (§8.4), and
+a child MUST NOT declare a prohibition that narrows a parent's — a prohibition is not a ceiling,
+so there is no minimum to take and nothing for a child to tighten.
+
+The set of prohibitions in force for a request is the **union** over the whole chain, evaluated
+together in §8.2.1. This is the only construct in the language that unions rather than takes a
+minimum, and it is consistent: H1 minimises ceilings because the tightest grant wins, and H6
+unions prohibitions for the same reason — every refusal in the chain is in force at once.
+
+A child may of course add prohibitions of its own. That is tightening, which H1 permits in
+general and S3 requires to always be available.
 
 ## 9 · Compiled form
 
@@ -728,12 +887,23 @@ limit_id · dimension · asset · base · exceptions[] · ceiling_static
          · escalations[] · selector_program
 ```
 
+per prohibition:
+
+```
+prohibition_id · selector_program
+```
+
 and per document a header:
 
 ```
 charter_id · version · resolver_tier · resolver_version · tzdata_version
-         · timezone · resolved_assets[]
+         · timezone · resolved_assets[] · prohibitions[]
 ```
+
+Prohibitions are document-level and carry no dimension, asset, window, scope or ceiling. A
+prohibition has nothing but a name and a condition, which is the compiled form saying the same
+thing S5 and §8.2.1 say: it is not a limit, it holds no state, and it takes no part in any
+arithmetic. `prohibition_id` exists so a denial can name which one refused, as §8.2.1 requires.
 
 `resolved_assets` carries the full resolver record for every asset named — mint, symbol,
 issuer, network, decimals, class, token program — so evaluation performs no lookup and S12's
@@ -753,6 +923,7 @@ name a source span; every error over two rules MUST name both.
 
 ```
 E1xx lexical    101 reserved word as identifier   102 integer overflow
+                103 `deny` used as a value
 E2xx literal    201 unknown asset name            202 fractional digits exceed decimals
                 203 minor-unit overflow           204 duration out of range
                 205 invalid calendar date         206 unknown timezone
@@ -763,14 +934,29 @@ E3xx structure  301 operator not valid for field  302 heterogeneous group
                 305 non-literal escalation ceiling 306 escalation below base
                 307 mixed assets in one limit     308 unknown approver set
                 309 quorum out of range           310 duplicate escalation trigger
-                311 no limits declared
+                311 no limits declared            312 multiple inheritance
+                313 escalation answered below the level that imposed it
+                314 `unlimited` in a root charter
+                315 asset with no cap at any level
+                316 prohibitions but no limit     317 unreachable prohibition
 E4xx resolver   401 segment disagrees             402 unknown mint
                 403 unknown chain namespace       404 missing or stale rate source
                 405 pinned asset changed          406 mint revoked
-                410 malformed reference syntax   411 wrong segment count
-                412 fact segment in a reference  413 caip-19 asset ns mismatch
+                407 parent tightened               410 malformed reference syntax
+                411 wrong segment count           412 fact segment in a reference
+                413 caip-19 asset ns mismatch
+E5xx authenticity
+                501 signature invalid             502 unknown controller key
+                503 compiled digest mismatch      504 version not monotonic
+                505 charter outside validity window
+                506 charter name mismatch
 W1   warning    enumerated provenance set includes the maximum plane
+W2   warning    a child limit above its parent's ceiling is dead text
 ```
+
+E103 exists because `deny` was an exception value before prohibition became a declaration
+(§2.3). A document written against the earlier draft must fail at the `deny` token saying so,
+rather than at whatever the parser tripped over next.
 
 ## 11 · Conformance
 
@@ -784,6 +970,7 @@ conformance/
   canonical/*.charter            + expected compiled bytes
   eval/*.json                    charter + request sequence → expected decisions
   asset-ref/                     the mint:// and unit:// sub-parser, on its own
+  authenticity/                  signature, key, digest, version and validity cases (§12)
 ```
 
 Every rule in §7 MUST have at least one `reject` case naming it. Every clause in §8 MUST have at
@@ -802,17 +989,168 @@ drift.
 
 `eval` vectors MUST include: the 101st unit against a 100-unit allowance escalating rather than
 failing; a reservation released on blockhash expiry and not on a timer; a `count` not released
-on failure; a payment reserved before and settling after a window boundary; and a DST
-transition in both directions.
+on failure; a payment reserved before and settling after a window boundary; a DST transition in
+both directions; a request exactly equal to an `at least` threshold and the same request against
+an `above` one; a prohibited request consuming no accumulator and being offered no quorum; a
+limit lowered mid-window; and a limit renamed mid-window.
 
-## 12 · Deferred
+An implementation MUST also have cases for §12: an unsigned charter, an invalid signature, an
+unknown key, a compiled digest that does not match its commitment, a replayed lower version, a
+commitment whose `charter` names a different document, and one outside its validity window. An
+engine that enforces every rule above on a charter an attacker wrote is not conforming, and
+authenticity is the only part of this specification whose absence is invisible from inside a
+correct evaluation.
+
+## 12 · Authenticity
+
+Everything above describes what a charter *means*. This section is about whether the charter the
+engine enforces is the one the controller wrote, and it is normative.
+
+### 12.1 The problem
+
+The host is untrusted by design. Today the host hands the engine a compiled charter and the
+engine enforces it faithfully. Faithful enforcement of an attacker's charter is not enforcement:
+**a compromised host can choose its own limits**, and every bound in this specification becomes
+a statement about a document nobody authorised.
+
+This is not a residual risk to note. It is the whole guarantee, and it is currently missing.
+
+### 12.2 The rule
+
+A conforming engine MUST reject any charter that does not arrive with a valid controller
+signature. There is no unsigned path, no development bypass reachable in a production build, and
+no "trusted host" configuration.
+
+### 12.3 What is signed
+
+Not the charter. A **commitment**:
+
+```json
+{
+  "charter":       "acme-treasury",
+  "version":       7,
+  "text_digest":   "sha256:…",
+  "compiled_digest": "sha256:…",
+  "key_id":        "…",
+  "not_before":    "2026-09-02T00:00:00Z",
+  "not_after":     "2027-09-02T00:00:00Z"
+}
+```
+
+Serialised with JCS (RFC 8785) and signed. Two digests, and the reason for each is the reason
+this design is not obvious.
+
+**`text_digest` covers the canonical text form (§1.1).** It is the only field that binds the
+signature to something a human read. A controller reviews text; if the signature covered JSON
+alone they would be attesting to bytes they never saw, in a different notation, which is
+precisely the display-one-sign-another gap this system exists to close for payments. Applying
+that standard to payments and not to the document that authorises them would be incoherent.
+
+**`compiled_digest` covers the compiled form (§9).** It is what the engine actually evaluates.
+The engine verifies the signature, then verifies that `sha256(received compiled form)` equals
+`compiled_digest`, and evaluates. **It never parses text** — `text_digest` is an opaque 32 bytes
+to it — so the crate split holds and the enclave-side implementation stays dependency-free.
+
+The controller's own client compiles and computes both digests. That client is trusted, and it
+is the only component that can be: the controller has to be trusted to read their own charter.
+The host is not in that path, which is the point. Anyone may independently recompile the text
+and check that the two digests agree — a divergence is evidence, publicly checkable, and it
+makes a lying client a detectable event rather than an undetectable one.
+
+### 12.4 What the engine checks
+
+In order, failing closed at the first failure:
+
+1. `key_id` names a key in the engine's trust root (§12.5), else **E502**.
+2. The signature over the JCS-canonicalised commitment verifies, else **E501**.
+3. The current time is within `[not_before, not_after)`, else **E505**.
+4. `charter` matches the charter being installed, else **E506**. Without this, a signed
+   commitment for a permissive charter can be replayed against a restrictive one.
+5. `version` is strictly greater than the highest version yet installed for this charter name,
+   else **E504**.
+6. `sha256(compiled form)` equals `compiled_digest`, else **E503**.
+
+**Step 5 is anti-rollback and it costs nothing**, because the header already carries
+`charter <name> version <uint>` (§3). That field was there for humans; it is exactly the
+monotonic counter the engine needs, and the engine already has anti-rollback machinery for
+accumulator state. Reusing one number for both means an attacker cannot replay last quarter's
+generous charter, and an operator cannot do it by accident either.
+
+Note the interaction with §8.4A: rejecting a stale version is not the same as ignoring a valid
+one. A newly installed charter takes effect immediately and does not reset any meter.
+
+### 12.5 The trust root and rotation
+
+The engine holds a **controller key set**, established at provisioning and part of what the
+attestation covers. A host that can change the trust root can mint charters, so:
+
+- Adding or removing a controller key is itself a signed operation, requiring a quorum of the
+  *current* set. A single compromised controller key cannot rotate itself into sole control.
+- Removing the last key is refused. An engine with no controller keys accepts nothing and is
+  unrecoverable, and an unrecoverable engine holding funds is worse than a compromised one.
+- A revoked key invalidates future installations only. Charters already installed under it stay
+  in force until replaced, because the alternative — spontaneously voiding live limits — means
+  either everything denies or, far worse, nothing does.
+- `not_after` bounds the damage from a key compromise nobody noticed. A charter that outlives
+  its validity window stops (E505) rather than continuing indefinitely.
+
+### 12.6 What this does not solve
+
+A compromised host still controls *availability*: it can refuse to forward a new charter, or
+keep presenting an older valid one within its validity window. Signing bounds what a host can
+make the engine *do*; it cannot make a host cooperate.
+
+That residual is why `not_after` is mandatory rather than optional. Staleness becomes a
+liveness failure with a deadline instead of a silent indefinite one, and a controller who sees
+their new charter not taking effect learns something is wrong from the charter expiring rather
+than from an invoice.
+
+## 13 · Deferred
 
 Not in this version, and each would be additive:
 
 - Explicit exception priority (S4 forces disjointness instead).
-- `deny` as its own rule form rather than a value.
 - Time-of-day conditions.
 - Cross-limit references; conjunction is the only composition.
 - Cross-asset ceilings — these need a rate, which drags every §S11 objection into the general
   case rather than the opt-in one.
-- Fixed-window realignment when a charter is edited mid-window.
+
+### 13.1 `prices` and `scope item` — deferred, with the analysis corrected
+
+Proposed in [`examples.md`](examples.md) §2c: a `prices` table naming a per-item ceiling the
+principal wrote down, `amount from <table>` taking the ceiling per item, and `scope item`
+accumulating per item so buying one thing does not consume another's allowance.
+
+The motivation is sound and the shape is close to right. It is deferred for one hard reason and
+two soft ones.
+
+**The hard one: the proposal's stated bound is wrong.** §2c claims the static ceiling is the
+maximum entry, 45.00. It is not. Under `scope item` each item accumulates separately, so the
+window exposure is the **sum** over the table — 105.00 for three items — and the maximum is only
+the per-item ceiling. A feature whose published bound is off by a factor of the table length is
+not finished, and S5 is the rule this language is built around.
+
+**`scope item` alone is unbounded.** Accumulating per item keys the allowance on an identifier
+the merchant supplies. Absent an enumeration, a merchant that varies the item id draws a fresh
+allowance every time, and the aggregate is unbounded — the §2b failure exactly, moved one level
+down: the merchant can no longer manufacture the *condition*, but can manufacture an unlimited
+supply of fresh *accumulators*. The `prices` table is what closes this, by enumerating every id
+that can resolve to money at all. So the two are not separable features; `scope item` MUST be
+legal only in a limit whose dimension is `amount from <prices>`, and an item absent from the
+table has no ceiling and is refused.
+
+**And it needs a vocabulary extension.** §6's field table has no item identity. Adding one is an
+engine contract change, which S2 says is a reviewed engine change and not an author's to make.
+
+None of this is fatal, and the corrected version is coherent:
+
+- `scope item` legal only with `amount from <prices>`.
+- The S5 contribution is the **sum** of the table's entries, not the maximum.
+- An item not in the table is refused; the table is the enumeration that makes the key space
+  finite.
+- The request vocabulary gains an item identity, as a reviewed change.
+
+It is deferred rather than adopted because nothing in the core mandate needs it, and because
+grammar is one-way: syntax added can be removed only by breaking documents already written,
+while syntax deferred costs nothing but a later version number. When a price table is wanted,
+this is the design — with the sum.

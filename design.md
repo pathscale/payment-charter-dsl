@@ -81,10 +81,11 @@ resolver common@41
   group hardware          = { mcc:5045, mcc:5732 }
   approvers finance       = { alice, bob, carol }
 
+  prohibit holiday_freeze when date after 2026-12-20 and date before 2027-01-02
+
   limit daily_spend
     amount 500.00 USDC
       except 5000.00 USDC when counterparty in trusted_suppliers
-      except deny         when date after 2026-12-20 and date before 2027-01-02
     per fixed day in Europe/London
     scope agent
     above 200.00 USDC require 2 of finance
@@ -230,7 +231,7 @@ The five-class taxonomy in the synthetic-stablecoin survey (internal) becomes
 something a controller can state rather than something hardcoded:
 
 ```
-except deny when asset.class is not fiat_reserve
+prohibit off_class when asset.class is not fiat_reserve
 ```
 
 That separates two questions currently conflated: what **we** custody, which is class A only,
@@ -396,11 +397,125 @@ Those are additive and do not disturb the state machine.
   always, is undecided. Forcing disjointness is stricter and probably right at first.
 - **Money literals and rounding.** Minor units as integers, with decimals from the resolver.
   The rounding direction must be decided now, and must always tighten.
-- **Whether `deny` belongs as an exception value.** It reads well above, but a denial is not a
-  ceiling, and it may be cleaner as its own rule form.
-- **Fixed-window alignment on charter change.** Editing a monthly limit mid-month: does the
-  window restart, or does the new ceiling apply to the accumulated total? The second is safer
-  and stranger to explain.
 - **Whether a cross-asset ceiling is expressible at all.** "No more than $1000 across
   everything" is a thing controllers ask for, and it requires a rate, which drags every
   objection in the `unit://` section into the general case rather than the opt-in one.
+
+## Decisions taken 2026-09-02
+
+Four questions were open. Each is settled below, and the spec is the record; this section is
+why.
+
+### Prohibition is a declaration, not a value
+
+`deny` was an exception value: `except deny when <condition>`, sitting in the same slot as
+`except 5000.00 USDC when …`. It is now `prohibit <name> when <condition>`, a document-level
+declaration.
+
+The slot was lying about its type. Every other inhabitant is a ceiling; `deny` is not one, and
+it needed a special case in three separate places to say so — S5 excluded it from the bound,
+§8.4 exempted it from becoming an escalation, and H6 gave it its own propagation rule while
+every real ceiling takes a minimum. Three exemptions for one production is a language telling
+you the shape is wrong.
+
+Two consequences are worth more than the tidiness.
+
+**S4 stops fighting the author.** Exceptions must be provably disjoint, so as a value, "5000 for
+trusted suppliers, but never during the freeze" was E304 — two overlapping conditions — and the
+author had to write `and not <freeze>` into every exception by hand. A prohibition that must be
+restated in every clause it constrains will eventually be left out of one, and the clause it is
+missing from is the one that pays. A prohibition is exempt from S4 in both directions: it may
+overlap anything, because it composes by dominating rather than by resolving.
+
+**Scope stops being wrong by default.** As an exception, a prohibition constrained exactly one
+limit, and a limit added later silently did not inherit it. As a declaration it covers the
+document and everything beneath it (H6). "Never pay a merchant-supplied address" was never a
+property of one limit.
+
+The cost is one new declaration form and the loss of the ability to prohibit within a single
+limit's dimension. Nothing wanted that.
+
+### `above` needed a companion, and the reason is a boundary payment
+
+The trigger grammar had only `above V`, which fires on `> V`. A controller writing "anything of
+fifty dollars or more needs my approval" writes `above 50.00`, and a payment of exactly 50.00
+then goes through unattended.
+
+Nothing is malformed. The charter compiles. The bound is still computable. And the single
+amount most likely to arise under a rule about fifty dollars is the one the rule does not
+catch — because thresholds people state out loud are round numbers, and round numbers are what
+prices land on.
+
+`at least V` fires on `>= V`. Both forms exist, neither is the default, and neither is spelled
+`>=`: the author has to say which edge they mean, in words, in a document another human reviews.
+S17 makes them one trigger kind so a limit cannot carry both and meet at a boundary with no
+defined composition.
+
+This is the only decision here that came from reading a controller's sentence rather than from
+the invariants, and it is the one that would have shipped a wrong payment.
+
+### An edit changes the ceiling, never the meter
+
+Both candidate answers to "what happens to accumulated spending when a charter is edited
+mid-window" are defensible until you write down the lowering case.
+
+$100 a month, $80 spent, controller edits to $50. Restarting the window gives the agent a fresh
+$50 and a monthly total of $130 — in a month the controller capped first at 100 and then at 50.
+Tightening a limit would increase spending. It also hands anyone who can cause a charter update
+a general-purpose allowance reset, which is a spending exploit requiring no forged signature at
+all, just the ability to make a controller save a file.
+
+So: accumulators are keyed by wall-clock window instance, not by charter version, and installing
+a new version re-points ceilings while leaving meters untouched. Raising a limit gives the
+difference, not the whole new amount. The objection that this is harder to explain does not
+survive contact with the one-sentence version.
+
+The rule then has to be defended at two seams, and both use machinery that already existed. A
+changed `per` clause has no matching accumulator to carry, so the superseded limit keeps
+enforcing until its final window closes and §8.3's join takes the most restrictive — otherwise
+`fixed month` → `fixed week` is the same reset through a different clause. A renamed limit is
+the same case, since a limit id is a name, so renaming `petty_cash` would otherwise mint a fresh
+allowance.
+
+### A charter must be signed, and this was a hole in the system rather than the spec
+
+The host is untrusted by design. Until now it handed the engine a compiled charter and the
+engine enforced it faithfully — which means a compromised host chose its own limits, and every
+bound in the specification described a document nobody authorised. Faithful enforcement of an
+attacker's charter is not enforcement.
+
+The controller signs; the engine verifies before it compiles; there is no unsigned path.
+
+What is signed is not the charter but a commitment carrying **two** digests, and that is the
+part worth explaining. `compiled_digest` covers what the engine evaluates. `text_digest` covers
+the canonical text form — the only thing a human read. Signing the JSON alone would have the
+controller attesting to bytes they never saw in a notation they do not read, which is exactly
+the display-one-sign-another gap this system exists to close for payments. Applying that
+standard to a payment and not to the document authorising the payment would be incoherent.
+
+The engine verifies the signature and the compiled digest and never parses text; `text_digest`
+is opaque bytes to it, so the dependency-free evaluator stays dependency-free. Anyone may
+recompile the text and check the two agree, which makes a lying client detectable rather than
+merely trusted.
+
+Anti-rollback came free. The header already carried `charter <name> version <uint>` for humans,
+and it is exactly the monotonic counter needed to refuse a replayed permissive charter.
+
+Signing does not solve availability: a compromised host can still refuse to forward a new
+charter, or keep presenting an older valid one. That residual is why `not_after` is mandatory —
+it turns indefinite silent staleness into a liveness failure with a deadline.
+
+### `prices` and `scope item` are deferred, and the proposal had a real error
+
+The wishlist feature preserved every invariant it claimed to, but its published bound was
+wrong: under per-item accumulation the window exposure is the **sum** of the table's entries,
+not the largest. The stated ceiling was off by a factor of the table's length, in the one
+calculation this language exists to make trustworthy.
+
+Separately, `scope item` alone is unbounded — it keys an accumulator on an identifier the
+merchant supplies, so varying it draws a fresh allowance every time. The price table is what
+closes that, by enumerating every id that can resolve to money. The two are one feature.
+
+Corrected, it is coherent, and §13.1 records the corrected design. It stays deferred because
+nothing in the core mandate needs it and because grammar is one-way: syntax added can only be
+removed by breaking documents already written, while syntax deferred costs a version number.

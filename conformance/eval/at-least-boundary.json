@@ -1,0 +1,14 @@
+{
+  "description": "The at-least trigger fires on equality. This is the payment 'above' would let through unattended.",
+  "charter": "parse/accept/petty-cash-at-least.charter",
+  "clock": "2026-09-01T09:00:00-04:00",
+  "requests": [
+    { "amount": "30.00", "asset": "USDC", "agent": "a1", "expect": "allow" },
+    { "amount": "49.99", "asset": "USDC", "agent": "a1", "expect": "allow",
+      "note": "one minor unit below the threshold" },
+    { "amount": "50.00", "asset": "USDC", "agent": "a1", "expect": "escalate",
+      "escalation": { "limit": "petty_cash", "trigger": "at least", "quorum": 1,
+                      "approvers": "owner", "ceiling": "2000.00" },
+      "note": "the case the rule was written for; 'above 50.00' would allow this" }
+  ]
+}

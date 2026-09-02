@@ -95,18 +95,127 @@ literal, so S1 and S5 hold.
 ```
 
 `amount from wishlist` takes each item's ceiling from the table. `scope item` accumulates per
-item, so buying Silksong does not consume Factorio's allowance. The static ceiling is the
-maximum entry — 45.00 — computable by reading the file, exactly as S5 requires.
+item, so buying Silksong does not consume Factorio's allowance.
 
 And the behaviour is what the author wanted: a game at or below their stated price goes through
 without asking; above it, refused. **A merchant cannot manufacture the condition, because the
 condition is a number the principal wrote down.** A sale is precisely when the offer falls under
 that number.
 
-> **`prices` and `scope item` are a proposed addition**, not in `spec.md` yet. They arise
-> from this example and they preserve every invariant: values stay literals, the ceiling set
-> stays finite, and no condition consults accumulated state. Adding them is an engine change
-> under review, which is the process §7 S2 describes — not something an author can do.
+**The static ceiling is 105.00, not 45.00.** An earlier draft of this section said 45.00 — the
+largest entry — and that was wrong in a way worth keeping visible, because it is the mistake
+this whole language is built to make impossible.
+
+Under `scope item` each item has its own accumulator. Three items with their own ceilings, all
+open at once, is `45 + 35 + 25` of window exposure. The largest entry is the ceiling on any one
+*item*; it is not the ceiling on the *charter*, and S5 asks for the second. Read the maximum and
+you under-state what the document authorises by a factor of the table's length.
+
+There is a second, sharper reason the two halves cannot be separated. `scope item` keys an
+accumulator on an identifier the merchant supplies. On its own, a merchant that varies the item
+id draws a fresh allowance every time and the aggregate is unbounded — the §2b failure again,
+one level down: the merchant can no longer manufacture the *condition*, but can manufacture an
+endless supply of fresh *accumulators*. What closes it is the table, which enumerates every id
+that can resolve to money at all. So `scope item` is only ever legal alongside
+`amount from <prices>`, and an item absent from the table is refused rather than unbounded.
+
+> **`prices` and `scope item` are deferred**, not adopted — see `spec.md` §13.1, which records
+> the corrected design. The motivation holds and the shape is nearly right, but a proposal whose
+> published bound was off by a factor of three is not finished, and `scope item` additionally
+> needs an item identity in §6's field table, which S2 makes a reviewed engine change rather
+> than an author's to make. Syntax added can only be removed by breaking documents already
+> written; syntax deferred costs a version number.
+
+---
+
+## 2A · Petty cash, and the boundary that is easy to get wrong
+
+*"The agent can spend $100 this month without asking me. Over that, or anything $50 or more,
+needs my approval."*
+
+```
+charter assistant version 1
+resolver common@41
+timezone America/New_York
+
+  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers owner = { sam }
+
+  limit petty_cash
+    amount 100.00 USDC
+    per fixed month in America/New_York
+    scope agent
+    escalate at least 50.00 USDC require 1 of owner up to 2000.00 USDC within 3 days
+    escalate when exhausted require 1 of owner up to 2000.00 USDC within 3 days
+```
+
+Read it back against the sentence:
+
+| Request | Outcome |
+|---|---|
+| 30.00, 20.00 spent this month | **allow** — under 50, under the monthly cap |
+| 49.99 | **allow** |
+| **50.00** | **escalate** — this is the whole point, see below |
+| 60.00 | **escalate** — at or above 50 |
+| 10.00, with 95.00 already spent | **escalate** — the month is exhausted |
+| 10.00, with 95.00 spent, no approver answers within 3 days | **deny**, and the reservation is released (§8.1.5) |
+
+**`at least`, not `above`.** "Anything fifty dollars or more" includes fifty dollars.
+`escalate above 50.00 USDC` fires on `> 50.00`, so a payment of exactly 50.00 goes through
+unattended — silently, with nothing malformed and the charter compiling cleanly. It is also the
+single most likely amount for a rule about fifty dollars to actually meet. The language offers
+both forms and neither as a default, because the author has to state which edge they mean;
+[`spec.md`](spec.md) §8.2.3 is the rule.
+
+**Both escalations are needed, and they are different questions.** `at least 50.00` asks about
+*this payment's size*. `when exhausted` asks about *the month's remaining allowance*. A $10
+payment in a month with $5 left trips the second and not the first. Declaring only the first
+would let the agent quietly drain the last of the budget in small pieces; declaring only the
+second would let a single $80 payment through unasked. S15 permits one of each.
+
+**`up to 2000.00` is not decoration.** S5 requires every escalation to name a finite ceiling, so
+the charter states two numbers a reader can find without running anything: **100.00** is the
+most the agent moves alone in a month, and **2000.00** is the most it moves with Sam answering
+each time. There is no third number and no way to write one.
+
+**What happens when Sam lowers it mid-month.** Suppose 80.00 is spent and Sam decides 100 was
+too generous, editing to 50.00. Everything denies until the month rolls — the meter reads 80.00
+against a ceiling of 50.00. It does **not** restart the month, which would let the agent spend
+130.00 in a month Sam capped first at 100 and then at 50. [`spec.md`](spec.md) §8.4A: an edit
+changes the ceiling, never the meter.
+
+### 2A.1 · The same thing at company scale
+
+A CFO wants central control of petty cash across departments and staff. That is the hierarchy in
+§3, and nothing new is needed:
+
+```
+COMPANY_WIDE        CFO writes this. Company-wide prohibitions and the total cap.
+  └── DEPT_ENG      Department head. May only tighten.
+        └── MANAGER_ALICE
+              └── AGENT_BUILDBOT
+```
+
+Four properties fall out, and each is a rule already stated rather than a feature added for this:
+
+- **A department cannot exceed the company.** H1 takes the minimum over the chain per request, so
+  a department writing 40000 under a company cap of 250000 faces 40000, and one writing 400000
+  faces 250000 with its own number dead text (W2).
+- **Every payment draws down every level.** H2: a leaf agent's $30 debits the leaf, the manager,
+  the department and the company. There is no accounting in which the department's spending is
+  invisible to the CFO.
+- **The CFO's prohibitions are absolute.** `prohibit sanctions when category in sanctioned` at
+  the root holds for every agent beneath it, and no department exception and no local quorum
+  lifts it (H6). A department may add prohibitions of its own; it cannot narrow one it inherited.
+- **A tightening propagates immediately, mid-window.** The CFO lowering the company cap on the
+  14th binds every department at once, and hands nobody a fresh allowance (§8.4A.3). This is
+  what makes "central management of spending" mean anything: if a mid-window edit reset the
+  meters, tightening the company cap would *increase* what could be spent that month, and the
+  control would be worse than useless.
+
+The CFO's document names departments' ceilings and the company's prohibitions. It does not have
+to enumerate employees, and it cannot be worked around by one.
 
 ---
 
@@ -133,9 +242,10 @@ timezone Europe/London
   group sanctioned    = { country:PRK, country:IRN }
   approvers treasury  = { cfo, controller, deputy }
 
+  prohibit sanctions when category in sanctioned
+
   limit company_monthly
     amount 250000.00 USDC
-      except deny when category in sanctioned
     per fixed month
     escalate when exhausted require 2 of treasury up to 400000.00 USDC within 3 days
 
@@ -206,6 +316,8 @@ timezone Europe/London
 
   group ci_vendors = { mcc:7372 }
 
+  prohibit merchant_supplied when provenance is at least merchant
+
   limit burst
     amount 200.00 USDC
     per rolling 5 minutes
@@ -213,19 +325,25 @@ timezone Europe/London
   limit routine
     amount 50.00 USDC
       except unlimited when category in ci_vendors
-      except deny      when provenance is at least merchant
     per fixed day
 ```
 
-Both interesting lines are in `routine`:
+Both interesting lines:
 
 - **`unlimited` is legal here** (H4) because this charter extends one. It resolves to the
   parent's effective ceiling — min(1500 daily from Alice, 40000/60000 from the department,
   250000 from the company). Finite, so S5 holds by induction.
-- **`deny when provenance is at least merchant`** refuses anything where any field came from
-  the counterparty or worse. A merchant-supplied amount is exactly the injection this system
-  exists to stop, and `is at least` keeps holding if a worse plane is ever added — an
-  enumerated `in { merchant, network }` would not (W1).
+- **`prohibit merchant_supplied when provenance is at least merchant`** refuses anything where
+  any field came from the counterparty or worse. A merchant-supplied amount is exactly the
+  injection this system exists to stop, and `is at least` keeps holding if a worse plane is ever
+  added — an enumerated `in { merchant, network }` would not (W1).
+
+  Note what moving this out of `routine` bought. As an exception it constrained one limit, so
+  the same danger had to be restated in every limit the leaf declared, and a limit added later
+  would silently not have it. As a prohibition it is one line covering the whole document and
+  everything beneath it (H6). It also composes with `except unlimited when category in
+  ci_vendors` without S4 complaining, where two exception clauses that overlap on a CI vendor
+  with merchant-stated provenance would have been E304.
 
 ### 3e · What a request actually faces
 
@@ -262,18 +380,26 @@ Now suppose `team_daily` is exhausted at 1500 and BuildBot asks for 10.00:
 ## 4 · Provenance in practice
 
 ```
+  prohibit merchant_recipient when provenance.recipient is at least merchant
+
   limit merchant_quoted
     amount 25.00 USDC
       except 500.00 USDC when provenance.amount is principal
-      except deny        when provenance.recipient is at least merchant
     per rolling 24 hours
     scope counterparty
 ```
 
-Three tiers from one limit. A price the human typed: 500. A price the agent inferred or the
-merchant quoted: 25. A *recipient address* supplied by the merchant: refused outright,
-regardless of amount — because a wrong recipient is unrecoverable in a way a wrong amount is
-not.
+Three tiers, and the third is a different construct on purpose. A price the human typed: 500. A
+price the agent inferred or the merchant quoted: 25. A *recipient address* supplied by the
+merchant: refused outright, regardless of amount — because a wrong recipient is unrecoverable in
+a way a wrong amount is not.
+
+That last one is a prohibition rather than a ceiling of zero, and §8.2.1 is why. A ceiling of
+zero is exhaustion, and exhaustion escalates wherever a `when exhausted` clause exists — so
+expressed as a ceiling, "never pay an address the merchant chose" would show up in an approver's
+queue at 2am as an ordinary over-limit request awaiting a quorum. It is not one. It is the
+attack this limit was written to stop, and the correct behaviour is that no human is offered the
+chance to wave it through.
 
 Note the dotted fields. Bare `provenance` is the tier, the maximum over all four, so
 `provenance is principal` would demand every field be principal-stated and reject a perfectly
@@ -408,6 +534,8 @@ timezone Europe/London
 
   approvers finance = { alice, bob, carol }
 
+  prohibit holiday_freeze when date after 2026-12-20 and date before 2027-01-02
+
   limit burst
     amount 100.00 USDC
     per rolling 5 minutes
@@ -416,7 +544,6 @@ timezone Europe/London
   limit daily_spend
     amount 500.00 USDC
       except 5000.00 USDC when counterparty in trusted_suppliers
-      except deny when date after 2026-12-20 and date before 2027-01-02
     per fixed day in Europe/London
     scope agent
     escalate above 200.00 USDC require 2 of finance up to 5000.00 USDC within 1 days
@@ -444,8 +571,10 @@ Six differences from §4, each of them the point:
    unrelated lines.
 4. **A blank line separates each declaration kind** and each `limit`; consecutive `group`
    declarations are not separated.
-5. **`except deny when …` is one line.** Nothing wraps, ever.
-6. **`0 USDC` became `0.00 USDC`** — money carries exactly the asset's minor-unit digits.
+5. **`prohibit` sorts after `approvers` and before every `limit`**, which is also the order it
+   is evaluated in (§8.2.1).
+6. **`0 USDC` became `0.00 USDC`** — money carries exactly the asset's minor-unit digits, and
+   nothing wraps, ever.
 
-The `except` clauses of `daily_spend` are already in byte order, so they do not move. Had they
-not been, they would have been sorted: S4 forces them disjoint, so their order means nothing.
+Exception clauses would have been sorted by byte value had there been more than one: S4 forces
+them disjoint, so their order means nothing.

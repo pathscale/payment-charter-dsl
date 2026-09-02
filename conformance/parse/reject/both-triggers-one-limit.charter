@@ -1,0 +1,16 @@
+# expect: E310
+# S17: above and at least are one trigger kind. Two thresholds meeting at a
+# boundary have no defined composition on it.
+charter colliding-triggers version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers owner = { sam }
+
+  limit spend
+    amount 100.00 USDC
+    per fixed day
+    escalate above 50.00 USDC require 1 of owner up to 500.00 USDC within 1 days
+    escalate at least 50.00 USDC require 1 of owner up to 500.00 USDC within 1 days

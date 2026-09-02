@@ -6,14 +6,33 @@ autonomous agent can spend within limits that are provable rather than hoped for
 A single document is **a charter**. Files are `.charter` (text) and `.charter.json` (wire).
 After first mention the language is just **Charter**.
 
-```
-charter "research-assistant" version 1
+*"The agent can spend $100 this month without asking me. Over that, or anything $50 or more,
+needs my approval."*
 
-  limit 500.00 asset mint://solana/EPjFWdd5.../USDC per rolling 7 days
-  limit 50.00  asset mint://solana/EPjFWdd5.../USDC per payment
-
-  when exhausted escalate to group finance up to 2000.00
 ```
+charter assistant version 1
+resolver common@41
+timezone America/New_York
+
+  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers owner = { sam }
+
+  limit petty_cash
+    amount 100.00 USDC
+    per fixed month in America/New_York
+    scope agent
+    escalate at least 50.00 USDC require 1 of owner up to 2000.00 USDC within 3 days
+    escalate when exhausted require 1 of owner up to 2000.00 USDC within 3 days
+```
+
+Two numbers, both literals a reader can find without running anything: **100.00** is the most
+this agent moves unaccompanied in a month, **2000.00** the most it moves with Sam answering each
+time. There is no third number and no way to write one.
+
+Note `at least` rather than `above`. "Fifty dollars or more" includes fifty dollars, and `above
+50.00` would let exactly that payment through unattended — the one amount a rule about fifty
+dollars is most likely to meet.
 
 ## The one property everything protects
 
@@ -35,8 +54,12 @@ to answer whether it preserves that.
 | [`docs/language-comparison.md`](docs/language-comparison.md) | Why not Catala, Rego, DMN, DAML or Rebel. |
 
 The specification covers lexical structure, a complete EBNF, the field × operator × value type
-table, sixteen static rules (S1–S16), hierarchy (H1–H6), dynamic semantics, the compiled form, a
-stable error catalogue (E1xx–E4xx), and the conformance layout.
+table, eighteen static rules (S1–S18), hierarchy (H1–H6), dynamic semantics, the compiled form,
+charter authenticity, a stable error catalogue (E1xx–E5xx), and the conformance layout.
+
+**A charter must be signed by its controller, and the engine verifies before it enforces**
+(§12). The host is untrusted by design, so an engine that faithfully enforces a charter the host
+made up is enforcing nothing. There is no unsigned path.
 
 ## Implementations
 
@@ -64,6 +87,8 @@ conformance/
   roundtrip/*.charter       text → JSON → text, byte-identical in canonical form (§1.1)
   canonical/*.charter       + expected compiled bytes
   eval/*.json               charter + request sequence → expected decisions
+  asset-ref/                the mint:// and unit:// sub-parser, on its own
+  authenticity/             signature, key, digest, version and validity cases (§12)
 ```
 
 A reject case names the error code it expects, so the suite tests the **identity** of a refusal

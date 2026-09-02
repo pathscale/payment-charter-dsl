@@ -1,0 +1,14 @@
+# expect: E317
+# S18: the date range is empty, so the prohibition can never fire. It looks
+# exactly like protection while providing none.
+charter dead-prohibition version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  prohibit never when date after 2027-01-02 and date before 2026-12-20
+
+  limit spend
+    amount 100.00 USDC
+    per fixed day

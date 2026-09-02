@@ -1,0 +1,15 @@
+{
+  "description": "8.4A.2 - a renamed limit keeps enforcing until its window closes, so renaming cannot reset an allowance.",
+  "charter": "parse/accept/petty-cash-at-least.charter",
+  "clock": "2026-09-01T09:00:00-04:00",
+  "requests": [
+    { "amount": "80.00", "asset": "USDC", "agent": "a1", "expect": "allow" },
+    { "install": { "charter": "assistant", "version": 2, "renamed": { "petty_cash": "petty_cash_v2" } },
+      "at": "2026-09-14T12:00:00-04:00" },
+    { "amount": "30.00", "asset": "USDC", "agent": "a1", "expect": "escalate",
+      "escalation": { "limit": "petty_cash", "trigger": "when exhausted" },
+      "note": "petty_cash_v2 has a fresh 100.00, but the retired petty_cash still holds 80.00 of its own and 8.3's join takes the most restrictive" },
+    { "amount": "20.00", "asset": "USDC", "agent": "a1", "expect": "allow",
+      "note": "20.00 is what the retired limit still permits" }
+  ]
+}

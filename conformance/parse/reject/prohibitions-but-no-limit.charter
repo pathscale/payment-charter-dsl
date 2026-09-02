@@ -1,0 +1,12 @@
+# expect: E316
+# S16: prohibitions do not satisfy the at-least-one-limit rule. A document of
+# pure prohibitions permits everything it did not think to forbid.
+charter deny-list-only version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  group sanctioned = { country:PRK, country:IRN }
+
+  prohibit sanctions when category in sanctioned
