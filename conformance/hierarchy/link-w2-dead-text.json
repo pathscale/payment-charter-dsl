@@ -1,0 +1,11 @@
+{
+  "description": "W2. The agent declares 900.00 beneath a department capped at 800.00. It is not an error — the minimum still binds and nothing is unsafe — but the larger number can never be reached, and an author who wrote it believed something that is not true.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/dept-travel.charter", "hierarchy/w2-agent.charter"],
+  "expect_warning": "W2",
+  "clock": 1767225600,
+  "requests": [
+    { "amount": "850.00", "asset": "USDC_circle", "expect": "deny",
+      "denied_by": ["dept_travel.dept_monthly"],
+      "note": "Under the 900.00 the leaf declares, and refused anyway." }
+  ]
+}

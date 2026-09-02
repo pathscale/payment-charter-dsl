@@ -1,0 +1,12 @@
+charter company_wide version 6
+resolver common@41
+timezone UTC+00:00
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers company_finance = { cfo, controller }
+
+  limit company_monthly
+    amount 1000.00 USDC_circle
+    per fixed month
+    escalate above 500.00 USDC_circle require 2 of company_finance up to 5000.00 USDC_circle within 2 days

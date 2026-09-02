@@ -1,0 +1,17 @@
+{
+  "description": "8.1.6. A payment belongs to the window in which it was reserved, not the one in which it settled. Settling across a boundary must not move it into the new window, which would let the same money be spent twice at midnight.",
+  "charter": "parse/accept/rate-and-balance.charter",
+  "clock": 1767311940,
+  "clock_note": "2026-01-01T23:59:00Z — one minute before the fixed-day boundary at UTC+00:00",
+  "requests": [
+    { "amount": "1000.00", "asset": "USDC_circle", "agent": "a1", "expect": "allow", "id": "straddler" },
+    { "at": 1767312060, "note": "2026-01-02T00:01:00Z. A new day, and a new window instance." },
+    { "settle": "straddler", "note": "It lands in the new day." },
+    { "amount": "1000.00", "asset": "USDC_circle", "agent": "a1", "expect": "allow",
+      "note": "The second day's own allowance is untouched by a payment that belongs to the first." },
+    { "at": 1767311950, "note": "Back inside the first day, to read its meter." },
+    { "amount": "1.00", "asset": "USDC_circle", "agent": "a1", "expect": "deny",
+      "denied_by": ["daily_spend"],
+      "note": "The first day is still fully spent. Settling moved the money, not the accounting." }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "description": "H5. There is no inheritance of permission by omission. The department caps domestic payments only; a payment it does not cap is denied at that level rather than passed through on the strength of the levels that do cap it.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/h5-dept-usa-only.charter", "hierarchy/h5-agent.charter"],
+  "clock": 1767225600,
+  "requests": [
+    { "amount": "100.00", "asset": "USDC_circle", "category": "country:USA", "expect": "allow" },
+    { "amount": "100.00", "asset": "USDC_circle", "category": "country:FRA", "expect": "deny",
+      "code": "E315", "denied_by": ["dept_usa"],
+      "note": "The company caps it and the agent caps it. The department does not, so it is not authorised — silence is not a grant." }
+  ]
+}

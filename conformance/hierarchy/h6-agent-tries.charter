@@ -1,0 +1,11 @@
+charter agent_dana version 1
+extends dept_travel@3
+resolver common@41
+timezone UTC+00:00
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit agent_monthly
+    amount 600.00 USDC_circle
+      except 700.00 USDC_circle when merchant.category is mcc:7995
+    per fixed month

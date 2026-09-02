@@ -1,0 +1,14 @@
+{
+  "description": "H3. Escalation is answered by the level that imposed the constraint. Where two levels both fire, the higher one's approvers are required — a department's leads must never be able to satisfy a company threshold.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/dept-travel.charter", "hierarchy/agent-ada.charter"],
+  "clock": 1767225600,
+  "requests": [
+    { "amount": "600.00", "asset": "USDC_circle", "expect": "escalate",
+      "escalation": { "level": "company_wide", "limit": "company_monthly", "trigger": "above", "approvers": "company_finance", "quorum": 2 },
+      "note": "Both thresholds fire: the company's above 500.00 and the department's above 200.00. The company's answers." },
+    { "at": 1769904000, "note": "1 February 2026 — a new fixed month, so every meter is new." },
+    { "amount": "250.00", "asset": "USDC_circle", "expect": "escalate",
+      "escalation": { "level": "dept_travel", "limit": "dept_monthly", "trigger": "above", "approvers": "dept_leads", "quorum": 1 },
+      "note": "Only the department's threshold fires, so its own leads answer for it." }
+  ]
+}

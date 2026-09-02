@@ -1,0 +1,13 @@
+charter agent_erin version 1
+extends dept_travel@3
+resolver common@41
+timezone UTC+00:00
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers erin_peers = { erin, mallory }
+
+  limit agent_monthly
+    amount 600.00 USDC_circle
+    per fixed month
+    escalate above 100.00 USDC_circle require 1 of erin_peers up to 5000.00 USDC_circle within 1 days

@@ -1,0 +1,15 @@
+# expect: E314
+# `unlimited` means "this level adds no constraint", which is finite only when a level above
+# supplies the constraint. In a root there is nothing to inherit from and it is unbounded.
+charter solo version 1
+resolver common@41
+timezone UTC+00:00
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  group payroll_recipients = { 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU }
+
+  limit monthly
+    amount 100.00 USDC_circle
+      except unlimited when counterparty in payroll_recipients
+    per fixed month

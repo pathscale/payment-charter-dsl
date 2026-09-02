@@ -1,0 +1,14 @@
+{
+  "description": "H1. The effective ceiling is the minimum over every level, not the number the leaf declares. The agent's 600.00 binds although the department permits 800.00 and the company 1000.00 — a child cannot raise anything, and the number a controller reads on the leaf is not the number in force.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/dept-travel.charter", "hierarchy/agent-ada.charter"],
+  "clock": 1767225600,
+  "clock_note": "2026-01-01T00:00:00Z, the first instant of a fixed month at UTC+00:00",
+  "requests": [
+    { "amount": "700.00", "asset": "USDC_circle", "expect": "deny",
+      "denied_by": ["agent_ada.agent_monthly"],
+      "note": "Permitted by both levels above it and refused by the one below them." },
+    { "amount": "150.00", "asset": "USDC_circle", "expect": "allow",
+      "effective_ceiling": "600.00",
+      "note": "min(1000.00, 800.00, 600.00) — the number an interface must show." }
+  ]
+}

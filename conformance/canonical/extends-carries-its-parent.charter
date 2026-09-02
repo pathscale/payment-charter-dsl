@@ -1,0 +1,13 @@
+charter dept_travel version 3
+extends company_wide@7
+resolver common@41
+timezone UTC+00:00
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers dept_leads = { lead_one, lead_two }
+
+  limit dept_monthly
+    amount 800.00 USDC_circle
+    per fixed month
+    escalate above 200.00 USDC_circle require 1 of dept_leads up to 800.00 USDC_circle within 1 days

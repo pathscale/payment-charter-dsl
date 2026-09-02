@@ -1,0 +1,16 @@
+{
+  "description": "8.1.7 at UTC+05:45. A fixed day aligns to midnight at the window's offset, so the boundary is at 18:15Z. A quarter-hour offset is in the corpus because an implementation that divided by whole hours would pass every other case in this suite.",
+  "charter": "parse/accept/quarter-hour-offset.charter",
+  "clock": 1767291300,
+  "clock_note": "2026-01-01T18:15:00Z, which is 2026-01-02T00:00:00 at UTC+05:45 — the first instant of a local day",
+  "requests": [
+    { "amount": "100.00", "asset": "USDC_circle", "expect": "allow" },
+    { "at": 1767377699, "note": "2026-01-02T18:14:59Z — the last second of that local day." },
+    { "amount": "1.00", "asset": "USDC_circle", "expect": "deny",
+      "denied_by": ["daily"],
+      "note": "Still the same window, 23:59:59 later." },
+    { "at": 1767377700, "note": "2026-01-02T18:15:00Z — one second on, and a new local day." },
+    { "amount": "100.00", "asset": "USDC_circle", "expect": "allow",
+      "note": "The boundary is where the offset puts it, not where UTC midnight is." }
+  ]
+}

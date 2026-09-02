@@ -1,0 +1,11 @@
+charter dept_usa version 1
+extends company_wide@7
+resolver common@41
+timezone UTC+00:00
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit domestic_only
+    amount 800.00 USDC_circle
+    for merchant.country is country:USA
+    per fixed month

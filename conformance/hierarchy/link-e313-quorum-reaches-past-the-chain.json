@@ -1,0 +1,5 @@
+{
+  "description": "E313. The agent names two of her own peers and lets them approve up to 5000.00, under a department capped at 800.00. Refused at link rather than left as dead text: an interface would otherwise show a person \"1 of erin_peers, up to 5000.00\" and the number they were approving against would be a fiction.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/dept-travel.charter", "hierarchy/e313-agent.charter"],
+  "expect_link": "E313"
+}

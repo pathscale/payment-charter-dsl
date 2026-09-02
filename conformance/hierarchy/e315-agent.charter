@@ -1,0 +1,10 @@
+charter agent_finn version 1
+extends dept_travel@3
+resolver common@41
+timezone UTC+00:00
+
+  asset USDT_tether = mint://USDT/Tether/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit tether_monthly
+    amount 300.00 USDT_tether
+    per fixed month

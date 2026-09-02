@@ -1,0 +1,5 @@
+{
+  "description": "E315. A child cannot introduce an asset its parent never allowed. Nothing above caps USDT, so every request against this limit would be denied — said once at link instead of once per payment.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/dept-travel.charter", "hierarchy/e315-agent.charter"],
+  "expect_link": "E315"
+}

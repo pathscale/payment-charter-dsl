@@ -1,0 +1,5 @@
+{
+  "description": "E318. Ada extends the department, and the department was not supplied. Evaluating this pair as a chain would silently drop a level and answer allow where the real chain answers deny, which is the one failure of §8A that produces a payment rather than an error.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/agent-ada.charter"],
+  "expect_link": "E318"
+}

@@ -1,0 +1,17 @@
+{
+  "description": "H6. Prohibitions propagate downward and cannot be lifted. The child raises its own ceiling for exactly the category the company prohibits, and it changes nothing — and the refusal costs no allowance at any level.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/dept-travel.charter", "hierarchy/h6-agent-tries.charter"],
+  "clock": 1767225600,
+  "requests": [
+    { "amount": "650.00", "asset": "USDC_circle", "category": "mcc:7995", "expect": "deny",
+      "code": "prohibited", "denied_by": ["company_wide.gambling"],
+      "note": "The child's exception permits 700.00 here. A prohibition is not a ceiling, so there is nothing for the child to outbid." },
+    { "amount": "200.00", "asset": "USDC_circle", "expect": "allow" },
+    { "amount": "200.00", "asset": "USDC_circle", "expect": "allow" },
+    { "amount": "200.00", "asset": "USDC_circle", "expect": "allow",
+      "note": "600.00 of a 600.00 ceiling. The meter was at zero after the refusal, not at 650.00 and not at anything in between." },
+    { "amount": "1.00", "asset": "USDC_circle", "expect": "deny",
+      "denied_by": ["agent_dana.agent_monthly"],
+      "note": "And exhausted exactly on schedule, which is what pins the previous step to a measurement rather than an inequality." }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "description": "H4. `unlimited` means this level adds no constraint, never that no constraint exists. Ada writes it for payroll and is capped at the department's 800.00 — finite by induction, and narrower than the word reads.",
+  "chain": ["hierarchy/company-wide.charter", "hierarchy/dept-travel.charter", "hierarchy/agent-ada.charter"],
+  "clock": 1767225600,
+  "requests": [
+    { "amount": "700.00", "asset": "USDC_circle", "counterparty": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM", "expect": "deny",
+      "denied_by": ["agent_ada.agent_monthly"],
+      "note": "An ordinary counterparty: the declared 600.00 applies." },
+    { "amount": "700.00", "asset": "USDC_circle", "counterparty": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU", "expect": "escalate",
+      "effective_ceiling": "800.00",
+      "escalation": { "level": "company_wide", "trigger": "above" },
+      "note": "The exception resolves to min(1000.00, 800.00) = 800.00. Writing one word did not reach 1000.00 and did not reach past the company threshold either." }
+  ]
+}
