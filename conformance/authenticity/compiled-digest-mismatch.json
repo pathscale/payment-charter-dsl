@@ -1,0 +1,19 @@
+{
+  "description": "E503 - a valid signature over one charter, presented with a different compiled form. The engine evaluates the compiled bytes, so this is the substitution the second digest exists to catch.",
+  "commitment": {
+    "charter": "acme-treasury",
+    "version": 7,
+    "text_digest": "28399b56b959893cb18a1d5b522f1bd1a93c9f886f4d310662b9255cdb2e26ca",
+    "compiled_digest": "5cfc227004203c9a796aae590ece559274e1d2bc1543a24244727294947b4756",
+    "key_id": "controller-1",
+    "not_before": 1788271200,
+    "not_after": 1819807200
+  },
+  "signature": "79d0b93b29cf85e53115ea0c377b11b5237f3a7edd5da7c3e18cdb3df7c5d18a",
+  "compiled": "6120646966666572656e7420636f6d70696c656420666f726d",
+  "installing": "acme-treasury",
+  "now": 1788300000,
+  "trusted_keys": ["controller-1"],
+  "highest_version": null,
+  "expect": "E503"
+}
