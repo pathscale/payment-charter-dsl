@@ -1,0 +1,16 @@
+# A token whose symbol is 'group'. S19 forces the alias to begin with it, so
+# the declaration reads 'asset group_solana = ...'. Maximal munch (2.4) lexes
+# group_solana as one identifier, so this is an ordinary asset declaration and
+# not an asset-group one. A lexer matching keywords eagerly gets this wrong.
+charter hostile-symbol version 1
+resolver full@41
+timezone UTC+00:00
+
+  asset group_solana = mint://group/Attacker/8b7Rp2VqNzKcF4uYxWtJ3sLmHdGaQ9eZcXvBnMkTyPwR/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers finance = { alice, bob }
+
+  limit spend
+    amount 100.00 group_solana
+    per fixed day
+    escalate at least 50.00 group_solana require 2 of finance up to 500.00 group_solana within 1 days

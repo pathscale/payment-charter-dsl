@@ -1,0 +1,18 @@
+# Version 2 of the petty-cash charter: the monthly cap lowered from 100.00 to
+# 50.00, everything else identical. Installed mid-window by
+# eval/mid-window-lowering.json — 8.4A says the meter carries and only the
+# ceiling moves, so 80.00 already reserved is now over a 50.00 cap.
+charter assistant version 2
+resolver common@41
+timezone UTC-05:00
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  approvers owner = { sam }
+
+  limit petty_cash
+    amount 50.00 USDC_circle
+    per fixed month in UTC-05:00
+    scope agent
+    escalate at least 50.00 USDC_circle require 1 of owner up to 2000.00 USDC_circle within 3 days
+    escalate when exhausted require 1 of owner up to 2000.00 USDC_circle within 3 days

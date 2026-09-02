@@ -1,0 +1,9 @@
+charter both-forms 1
+resolver common 41
+offset 0
+asset USDC_circle 2
+limit loose_edge amount USDC_circle 10000 fixed:week:0 -
+  escalate above:5000 1 owner 50000 86400
+limit strict_edge amount USDC_circle 10000 fixed:day:0 -
+  escalate atleast:5000 1 owner 50000 86400
+ceiling USDC_circle 100000

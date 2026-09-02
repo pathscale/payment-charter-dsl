@@ -1,0 +1,7 @@
+charter hostile-symbol 1
+resolver full 41
+offset 0
+asset group_solana 2
+limit spend amount group_solana 10000 fixed:day:0 -
+  escalate atleast:5000 2 finance 50000 86400
+ceiling group_solana 50000

@@ -1,0 +1,8 @@
+charter assistant 2
+resolver common 41
+offset -18000
+asset USDC_circle 2
+limit petty_cash_v2 amount USDC_circle 10000 fixed:month:-18000 agent
+  escalate atleast:5000 1 owner 200000 259200
+  escalate exhausted 1 owner 200000 259200
+ceiling USDC_circle 200000

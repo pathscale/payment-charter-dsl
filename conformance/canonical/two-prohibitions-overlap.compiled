@@ -1,0 +1,8 @@
+charter double-prohibit 1
+resolver common 41
+offset 0
+asset USDC_circle 2
+prohibit by_country (is merchant.country country:IRN,country:PRK)
+prohibit by_plane (atleast provenance merchant)
+limit spend amount USDC_circle 10000 fixed:day:0 -
+ceiling USDC_circle 10000

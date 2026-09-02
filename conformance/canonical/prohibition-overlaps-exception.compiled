@@ -1,0 +1,8 @@
+charter overlap-ok 1
+resolver common 41
+offset 0
+asset USDC_circle 2
+prohibit freeze (and (after 20807) (before 20820))
+limit spend amount USDC_circle 50000 fixed:day:0 -
+  except 500000 (is counterparty 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU)
+ceiling USDC_circle 500000

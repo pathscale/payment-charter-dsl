@@ -1,0 +1,16 @@
+# Two assets, same symbol, different issuers. S20's qualifier is what makes
+# the two limits readable as different assets rather than as one.
+charter both-usdc version 1
+resolver full@41
+timezone UTC+00:00
+
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_wormhole = mint://USDC/Wormhole/A9mUU4qviSctJVPJdBJWkb28deg915LYJKrzQ19ji3FM/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit native
+    amount 1000.00 USDC_circle
+    per fixed day
+
+  limit bridged
+    amount 100.00 USDC_wormhole
+    per fixed day

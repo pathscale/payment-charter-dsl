@@ -1,0 +1,15 @@
+charter corporate-cards 1
+resolver full 41
+offset -18000
+asset USD_iso4217 2
+instrument mastercard_token
+instrument visa_gold
+instrument visa_virtual
+limit gold_monthly amount USD_iso4217 100000000 fixed:month:-18000 -
+  applies (is instrument visa_gold)
+  escalate atleast:500000 2 finance 100000000 432000
+limit mastercard_monthly amount USD_iso4217 5000 fixed:month:-18000 -
+  applies (is instrument mastercard_token)
+limit visa_monthly amount USD_iso4217 100000 fixed:month:-18000 -
+  applies (is instrument visa_virtual)
+ceiling USD_iso4217 100105000

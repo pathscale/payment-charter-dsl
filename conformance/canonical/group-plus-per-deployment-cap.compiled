@@ -1,0 +1,10 @@
+charter placed-exposure 1
+resolver full 41
+offset 0
+asset USDC_ethereum 2
+asset USDC_solana 2
+asset_group USDC_circle_group USDC_ethereum,USDC_solana
+limit ethereum_exposure amount USDC_ethereum 2500 fixed:month:0 -
+limit monthly amount USDC_circle_group 10000 fixed:month:0 -
+ceiling USDC_circle_group 10000
+ceiling USDC_ethereum 2500

@@ -1,0 +1,19 @@
+# The reason members keep their own names: a hundred in total, of which at
+# most twenty-five on the chain that is expensive to bridge back from.
+# 8.3's join does the work; no new construct is involved.
+charter placed-exposure version 1
+resolver full@41
+timezone UTC+00:00
+
+  asset USDC_ethereum = mint://USDC/Circle/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/eip155:1
+  asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  asset group USDC_circle_group = { USDC_ethereum, USDC_solana }
+
+  limit monthly
+    amount 100.00 USDC_circle_group
+    per fixed month
+
+  limit ethereum_exposure
+    amount 25.00 USDC_ethereum
+    per fixed month

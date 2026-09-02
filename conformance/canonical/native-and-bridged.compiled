@@ -1,0 +1,9 @@
+charter both-usdc 1
+resolver full 41
+offset 0
+asset USDC_circle 2
+asset USDC_wormhole 2
+limit bridged amount USDC_wormhole 10000 fixed:day:0 -
+limit native amount USDC_circle 100000 fixed:day:0 -
+ceiling USDC_circle 100000
+ceiling USDC_wormhole 10000
