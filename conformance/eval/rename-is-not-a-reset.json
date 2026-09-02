@@ -1,16 +1,43 @@
 {
   "description": "8.4A.2 - a renamed limit keeps enforcing until its window closes, so renaming cannot reset an allowance.",
   "charter": "parse/accept/petty-cash-at-least.charter",
-  "clock": 1788606000,
+  "clock": 1788271200,
   "clock_note": "2026-09-01 09:00 at UTC-05:00",
   "requests": [
-    { "amount": "80.00", "asset": "USDC", "agent": "a1", "expect": "allow" },
-    { "install": { "charter": "assistant", "version": 2, "renamed": { "petty_cash": "petty_cash_v2" } },
-      "at": 1789732800 },
-    { "amount": "30.00", "asset": "USDC", "agent": "a1", "expect": "escalate",
-      "escalation": { "limit": "petty_cash", "trigger": "when exhausted" },
-      "note": "petty_cash_v2 has a fresh 100.00, but the retired petty_cash still holds 80.00 of its own and 8.3's join takes the most restrictive" },
-    { "amount": "20.00", "asset": "USDC", "agent": "a1", "expect": "allow",
-      "note": "20.00 is what the retired limit still permits" }
+    {
+      "amount": "40.00",
+      "asset": "USDC_circle",
+      "agent": "a1",
+      "expect": "allow"
+    },
+    {
+      "amount": "40.00",
+      "asset": "USDC_circle",
+      "agent": "a1",
+      "expect": "allow",
+      "note": "80.00 reserved. Both legs are under the 50.00 threshold, so neither escalates on amount."
+    },
+    {
+      "install": "parse/accept/petty-cash-renamed.charter",
+      "at": 1789405200
+    },
+    {
+      "amount": "20.00",
+      "asset": "USDC_circle",
+      "agent": "a1",
+      "expect": "allow",
+      "note": "petty_cash_v2 has a fresh 100.00, but the retired petty_cash still holds 80.00 of its own. 80 + 20 is exactly 100, so this is the last thing the rename permits."
+    },
+    {
+      "amount": "30.00",
+      "asset": "USDC_circle",
+      "agent": "a1",
+      "expect": "escalate",
+      "escalation": {
+        "limit": "petty_cash",
+        "trigger": "when exhausted"
+      },
+      "note": "The retired limit is now full, and 8.3 takes the most restrictive. Without 8.4A.2 the rename would have handed the agent a fresh 100.00 mid-month."
+    }
   ]
 }

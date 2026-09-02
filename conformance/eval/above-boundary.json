@@ -1,10 +1,10 @@
 {
   "description": "The above trigger is strict. Same amounts, different charter, one different outcome.",
   "charter": "parse/accept/above-and-at-least-distinct-limits.charter",
-  "clock": 1788591600,
+  "clock": 1788253200,
   "requests": [
-    { "amount": "50.00", "asset": "USDC", "agent": "a1", "expect": "escalate",
+    { "amount": "50.00", "asset": "USDC_circle", "agent": "a1", "expect": "escalate",
       "note": "strict_edge uses 'at least', so equality fires" },
-    { "amount": "49.99", "asset": "USDC", "agent": "a1", "expect": "allow" }
+    { "amount": "49.99", "asset": "USDC_circle", "agent": "a1", "expect": "allow" }
   ]
 }

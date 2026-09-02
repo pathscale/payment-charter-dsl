@@ -1,17 +1,17 @@
 {
   "description": "A prohibition denies outright, offers no quorum, and moves no accumulator - including no count.",
   "charter": "parse/accept/two-prohibitions-overlap.charter",
-  "clock": 1788591600,
+  "clock": 1788253200,
   "requests": [
-    { "amount": "10.00", "asset": "USDC", "category": "country:PRK", "expect": "deny",
+    { "amount": "10.00", "asset": "USDC_circle", "category": "country:PRK", "expect": "deny",
       "denied_by": ["by_country"],
       "quorum_offered": false,
       "note": "8.2.1 - final, no escalation is offered even though one exists elsewhere" },
-    { "amount": "10.00", "asset": "USDC", "category": "country:PRK",
+    { "amount": "10.00", "asset": "USDC_circle", "category": "country:PRK",
       "provenance": "merchant", "expect": "deny",
       "denied_by": ["by_country", "by_plane"],
       "note": "both prohibitions hold; the outcome names every one that did, not the first" },
-    { "amount": "10.00", "asset": "USDC", "category": "mcc:5411", "expect": "allow",
+    { "amount": "10.00", "asset": "USDC_circle", "category": "mcc:5411", "expect": "allow",
       "accumulator": { "spend": "10.00" },
       "note": "the two refusals above consumed nothing, so the full 100.00 was still available" }
   ]

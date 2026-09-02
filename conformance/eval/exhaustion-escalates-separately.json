@@ -1,17 +1,37 @@
 {
   "description": "Exhaustion and threshold are different questions. A small payment in an exhausted month escalates on the trigger the amount never reaches.",
   "charter": "parse/accept/petty-cash-at-least.charter",
-  "clock": 1788606000,
+  "clock": 1788271200,
   "clock_note": "2026-09-01 09:00 at UTC-05:00",
   "requests": [
-    { "amount": "45.00", "asset": "USDC", "agent": "a1", "expect": "allow" },
-    { "amount": "45.00", "asset": "USDC", "agent": "a1", "expect": "allow",
-      "note": "90.00 reserved, still under both the cap and the threshold" },
-    { "amount": "10.00", "asset": "USDC", "agent": "a1", "expect": "escalate",
-      "escalation": { "limit": "petty_cash", "trigger": "when exhausted" },
-      "note": "10.00 is far below the 50.00 threshold; it is the month that ran out" },
-    { "amount": "10.00", "asset": "USDC", "agent": "a1", "expect": "deny",
-      "approval": "none within 3 days",
-      "note": "8.1.5 - the pending reservation expires and the request is denied" }
+    {
+      "amount": "45.00",
+      "asset": "USDC_circle",
+      "agent": "a1",
+      "expect": "allow"
+    },
+    {
+      "amount": "45.00",
+      "asset": "USDC_circle",
+      "agent": "a1",
+      "expect": "allow",
+      "note": "90.00 reserved, still under both the cap and the threshold"
+    },
+    {
+      "amount": "10.01",
+      "asset": "USDC_circle",
+      "agent": "a1",
+      "expect": "escalate",
+      "escalation": {
+        "limit": "petty_cash",
+        "trigger": "when exhausted"
+      },
+      "note": "10.01 is far below the 50.00 threshold; it is the month that ran out. 90 + 10 would be exactly 100 and allowed - the 101st unit escalates, not the 100th."
+    },
+    {
+      "at": 1788616800,
+      "expire": true,
+      "note": "8.1.5 - no approver answers within 3 days, so the pending reservation is released and the request it was holding is denied. A state transition, not a new request."
+    }
   ]
 }
