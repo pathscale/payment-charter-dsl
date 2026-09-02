@@ -15,14 +15,14 @@ charter solo version 1
 resolver common@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   limit spend
-    amount 100.00 USDC
+    amount 100.00 USDC_circle
     per fixed day
 ```
 
-Static ceiling: 100.00 USDC per calendar day, Europe/London. No scope, so one accumulator for
+Static ceiling: 100.00 USDC_circle per calendar day, Europe/London. No scope, so one accumulator for
 everything. No escalation, so exhaustion denies.
 
 ---
@@ -41,12 +41,12 @@ charter household version 4
 resolver common@41
 timezone America/New_York
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group groceries = { mcc:5411, mcc:5422, mcc:5451, mcc:5462 }
 
   limit food
-    amount 200.00 USDC
+    amount 200.00 USDC_circle
     per fixed week
     scope account
 ```
@@ -83,9 +83,9 @@ literal, so S1 and S5 hold.
 
 ```
   prices wishlist = {
-    item:hollow-knight-silksong at 45.00 USDC,
-    item:factorio-space-age     at 35.00 USDC,
-    item:outer-wilds            at 25.00 USDC,
+    item:hollow-knight-silksong at 45.00 USDC_circle,
+    item:factorio-space-age     at 35.00 USDC_circle,
+    item:outer-wilds            at 25.00 USDC_circle,
   }
 
   limit wishlist_games
@@ -138,16 +138,16 @@ charter assistant version 1
 resolver common@41
 timezone America/New_York
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   approvers owner = { sam }
 
   limit petty_cash
-    amount 100.00 USDC
+    amount 100.00 USDC_circle
     per fixed month in America/New_York
     scope agent
-    escalate at least 50.00 USDC require 1 of owner up to 2000.00 USDC within 3 days
-    escalate when exhausted require 1 of owner up to 2000.00 USDC within 3 days
+    escalate at least 50.00 USDC_circle require 1 of owner up to 2000.00 USDC_circle within 3 days
+    escalate when exhausted require 1 of owner up to 2000.00 USDC_circle within 3 days
 ```
 
 Read it back against the sentence:
@@ -162,7 +162,7 @@ Read it back against the sentence:
 | 10.00, with 95.00 spent, no approver answers within 3 days | **deny**, and the reservation is released (§8.1.5) |
 
 **`at least`, not `above`.** "Anything fifty dollars or more" includes fifty dollars.
-`escalate above 50.00 USDC` fires on `> 50.00`, so a payment of exactly 50.00 goes through
+`escalate above 50.00 USDC_circle` fires on `> 50.00`, so a payment of exactly 50.00 goes through
 unattended — silently, with nothing malformed and the charter compiling cleanly. It is also the
 single most likely amount for a rule about fifty dollars to actually meet. The language offers
 both forms and neither as a default, because the author has to state which edge they mean;
@@ -237,7 +237,7 @@ charter company-wide version 7
 resolver full@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group sanctioned    = { country:PRK, country:IRN }
   approvers treasury  = { cfo, controller, deputy }
@@ -245,14 +245,14 @@ timezone Europe/London
   prohibit sanctions when category in sanctioned
 
   limit company_monthly
-    amount 250000.00 USDC
+    amount 250000.00 USDC_circle
     per fixed month
-    escalate when exhausted require 2 of treasury up to 400000.00 USDC within 3 days
+    escalate when exhausted require 2 of treasury up to 400000.00 USDC_circle within 3 days
 
   limit any_single_payment
-    amount 50000.00 USDC
+    amount 50000.00 USDC_circle
     per rolling 10 seconds
-    escalate above 25000.00 USDC require 2 of treasury up to 50000.00 USDC within 2 days
+    escalate above 25000.00 USDC_circle require 2 of treasury up to 50000.00 USDC_circle within 2 days
 ```
 
 Static maximum: **400000.00** on the escalated path, 250000.00 autonomous. Both literals.
@@ -265,16 +265,16 @@ extends company-wide@7
 resolver full@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group cloud = { mcc:7372, mcc:4816 }
   approvers eng_leads = { alice, bob }
 
   limit dept_monthly
-    amount 40000.00 USDC
-      except 60000.00 USDC when category in cloud
+    amount 40000.00 USDC_circle
+      except 60000.00 USDC_circle when category in cloud
     per fixed month
-    escalate when exhausted require 1 of eng_leads up to 60000.00 USDC within 1 days
+    escalate when exhausted require 1 of eng_leads up to 60000.00 USDC_circle within 1 days
 ```
 
 The cloud exception raises the *department's own* ceiling to 60000. It does not touch the
@@ -288,15 +288,15 @@ extends dept-eng@3
 resolver full@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   limit team_monthly
-    amount 8000.00 USDC
+    amount 8000.00 USDC_circle
     per fixed month
     scope agent
 
   limit team_daily
-    amount 1500.00 USDC
+    amount 1500.00 USDC_circle
     per fixed day
     scope agent
 ```
@@ -312,18 +312,18 @@ extends manager-alice@2
 resolver full@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group ci_vendors = { mcc:7372 }
 
   prohibit merchant_supplied when provenance is at least merchant
 
   limit burst
-    amount 200.00 USDC
+    amount 200.00 USDC_circle
     per rolling 5 minutes
 
   limit routine
-    amount 50.00 USDC
+    amount 50.00 USDC_circle
       except unlimited when category in ci_vendors
     per fixed day
 ```
@@ -347,7 +347,7 @@ Both interesting lines:
 
 ### 3e · What a request actually faces
 
-BuildBot requests **900.00 USDC** to a CI vendor, all fields principal-stated.
+BuildBot requests **900.00 USDC_circle** to a CI vendor, all fields principal-stated.
 
 | Level | Limit | Resolved ceiling | Reserved | Verdict |
 |---|---|---|---|---|
@@ -383,8 +383,8 @@ Now suppose `team_daily` is exhausted at 1500 and BuildBot asks for 10.00:
   prohibit merchant_recipient when provenance.recipient is at least merchant
 
   limit merchant_quoted
-    amount 25.00 USDC
-      except 500.00 USDC when provenance.amount is principal
+    amount 25.00 USDC_circle
+      except 500.00 USDC_circle when provenance.amount is principal
     per rolling 24 hours
     scope counterparty
 ```
@@ -412,7 +412,7 @@ ordinary invoice where only the venue came from the network.
 Same charter, one segment different:
 
 ```
-  asset USDC = mint://USDC/Circle/4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU/solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1
+  asset USDC_circle = mint://USDC/Circle/4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU/solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1
 ```
 
 Every limit, escalation, quorum and window exercised for real against a network that
@@ -429,26 +429,26 @@ Each of these is a conformance case in `parse/reject/`.
 **E307 — mixed assets in one limit**
 ```
   limit mixed
-    amount 500.00 USDC
+    amount 500.00 USDC_circle
       except 400.00 EURC when counterparty is 7xKX…
     per fixed day
 ```
-A cap of "500 USDC or 400 EURC" is two limits pretending to be one, and its ceiling is not a
+A cap of "500 USDC_circle or 400 EURC" is two limits pretending to be one, and its ceiling is not a
 quantity of anything.
 
 **E304 — overlapping exceptions**
 ```
-    amount 100.00 USDC
-      except 500.00 USDC when counterparty in suppliers
-      except 900.00 USDC when counterparty is 7xKX…      # a member of suppliers
+    amount 100.00 USDC_circle
+      except 500.00 USDC_circle when counterparty in suppliers
+      except 900.00 USDC_circle when counterparty is 7xKX…      # a member of suppliers
 ```
 Both hold for that counterparty. S4 rejects and names both rules. Under a first-match language
 this pays 500 or 900 depending on parser internals.
 
 **E306 — escalation below base**
 ```
-    amount 500.00 USDC
-    escalate above 200.00 USDC require 2 of finance up to 300.00 USDC
+    amount 500.00 USDC_circle
+    escalate above 200.00 USDC_circle require 2 of finance up to 300.00 USDC_circle
 ```
 An escalated ceiling under the autonomous one means approval *lowers* the limit.
 
@@ -470,9 +470,9 @@ makes the redundancy worth its length — a bare address could only be wrong sil
 charter dept-eng version 3
 extends company-wide@7
   limit dept_monthly
-    amount 40000.00 USDC
+    amount 40000.00 USDC_circle
     per fixed month
-    escalate when exhausted require 1 of eng_leads up to 300000.00 USDC
+    escalate when exhausted require 1 of eng_leads up to 300000.00 USDC_circle
 ```
 300000 exceeds the company's static maximum, so this asks a department lead to approve past a
 company constraint. H3 refuses.
@@ -527,7 +527,7 @@ charter acme-treasury version 7
 resolver common@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group hardware = { mcc:5045, mcc:5732 }
   group trusted_suppliers = { 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU }
@@ -537,17 +537,17 @@ timezone Europe/London
   prohibit holiday_freeze when date after 2026-12-20 and date before 2027-01-02
 
   limit burst
-    amount 100.00 USDC
+    amount 100.00 USDC_circle
     per rolling 5 minutes
     scope agent
 
   limit daily_spend
-    amount 500.00 USDC
-      except 5000.00 USDC when counterparty in trusted_suppliers
+    amount 500.00 USDC_circle
+      except 5000.00 USDC_circle when counterparty in trusted_suppliers
     per fixed day in Europe/London
     scope agent
-    escalate above 200.00 USDC require 2 of finance up to 5000.00 USDC within 1 days
-    escalate when exhausted require 2 of finance up to 5000.00 USDC within 1 days
+    escalate above 200.00 USDC_circle require 2 of finance up to 5000.00 USDC_circle within 1 days
+    escalate when exhausted require 2 of finance up to 5000.00 USDC_circle within 1 days
 
   limit transaction_count
     count 20
@@ -555,8 +555,8 @@ timezone Europe/London
     scope agent
 
   limit untrusted_counterparty
-    amount 50.00 USDC
-      except 0.00 USDC when provenance is principal
+    amount 50.00 USDC_circle
+      except 0.00 USDC_circle when provenance is principal
     per rolling 24 hours
     scope counterparty
 ```
@@ -573,7 +573,7 @@ Six differences from §4, each of them the point:
    declarations are not separated.
 5. **`prohibit` sorts after `approvers` and before every `limit`**, which is also the order it
    is evaluated in (§8.2.1).
-6. **`0 USDC` became `0.00 USDC`** — money carries exactly the asset's minor-unit digits, and
+6. **`0 USDC_circle` became `0.00 USDC_circle`** — money carries exactly the asset's minor-unit digits, and
    nothing wraps, ever.
 
 Exception clauses would have been sorted by byte value had there been more than one: S4 forces

@@ -175,8 +175,18 @@ permitted and insignificant.
 money = decimal ident ;
 ```
 
-The identifier MUST name an asset declared in this document (E201). The number of fractional
-digits MUST NOT exceed the declared decimals of that asset as given by the resolver (E202).
+The identifier MUST name an asset declared in this document (E201), and S19 and S20 constrain
+what that alias may be called: it cannot contradict the symbol it binds, and it cannot be the
+bare symbol. The number of fractional digits MUST NOT exceed the declared decimals of that asset
+as given by the resolver (E202).
+
+A money literal names the alias and **never repeats the reference**. Inlining a full reference at
+every use site looks like more explicitness and is less: a charter mentioning one asset twelve
+times would carry twelve independently mistypeable copies of a 90-character string, every line
+would exceed any reviewable width — §1.1 forbids wrapping — and a diff in which exactly one of
+the twelve changed is precisely the change a reviewer would miss. One binding, checked once
+against the resolver, referenced by a name that S19 and S20 stop from lying, puts the
+explicitness where it can be verified instead of where it can be skimmed.
 
 A money literal denotes an exact integer count of the asset's minor units:
 `value × 10^decimals`. The conversion MUST be exact — a literal that cannot be represented
@@ -289,16 +299,28 @@ authoring-time capability.
 
 #### 2.10.5 CAIP-19 as an input form
 
-A parser MUST accept CAIP-19 wherever a `mint-ref` is expected:
+A parser MUST accept CAIP-19 wherever a `mint-ref` is expected, with or without an `asset://`
+scheme prefix:
 
 ```
 solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+asset://solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 ```
 
-`<namespace>:<reference>/<asset-ns>:<asset-ref>`. The asset namespace MUST match the table
-above for that chain (E413). `symbol` and `issuer` are filled from the resolver, so a
+`[ "asset://" ] <namespace>:<reference>/<asset-ns>:<asset-ref>`. The prefix is optional and
+carries no meaning beyond making the token self-describing where a reference is pasted out of
+context; a parser MUST treat the two lines above as identical. The asset namespace MUST match
+the table above for that chain (E413). `symbol` and `issuer` are filled from the resolver, so a
 CAIP-19 input **cannot fail S7** — there is no author belief to contradict. Emission is
 always the native four-segment form; CAIP-19 is accepted, never produced.
+
+> Accepting it and never producing it is the whole point. CAIP-19 is the right thing to paste
+> from a block explorer and the wrong thing to have in a document a human reviews, because it
+> has no redundancy: a single wrong base58 character that happens to land on another real token
+> resolves cleanly and authorises the wrong asset. The native form carries the author's belief
+> about symbol and issuer, so the same typo is caught by S7 at compile time. Normalising inward
+> means the convenient form is available at authoring time and the checkable form is what gets
+> stored, signed and reviewed.
 
 #### 2.10.6 Canonical form and equality
 
@@ -423,7 +445,7 @@ charter acme-treasury version 7
 resolver common@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group trusted_suppliers = { 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU }
   group hardware          = { mcc:5045, mcc:5732 }
@@ -432,15 +454,15 @@ timezone Europe/London
   prohibit holiday_freeze when date after 2026-12-20 and date before 2027-01-02
 
   limit daily_spend
-    amount 500.00 USDC
-      except 5000.00 USDC when counterparty in trusted_suppliers
+    amount 500.00 USDC_circle
+      except 5000.00 USDC_circle when counterparty in trusted_suppliers
     per fixed day in Europe/London
     scope agent
-    escalate above 200.00 USDC  require 2 of finance up to 5000.00 USDC within 1 days
-    escalate when exhausted     require 2 of finance up to 5000.00 USDC within 1 days
+    escalate above 200.00 USDC_circle  require 2 of finance up to 5000.00 USDC_circle within 1 days
+    escalate when exhausted     require 2 of finance up to 5000.00 USDC_circle within 1 days
 
   limit burst
-    amount 100.00 USDC
+    amount 100.00 USDC_circle
     per rolling 5 minutes
     scope agent
 
@@ -450,8 +472,8 @@ timezone Europe/London
     scope agent
 
   limit untrusted_counterparty
-    amount 50.00 USDC
-      except 0 USDC when provenance is principal
+    amount 50.00 USDC_circle
+      except 0 USDC_circle when provenance is principal
     per rolling 24 hours
     scope counterparty
 ```
@@ -607,8 +629,8 @@ of prohibitions permits everything it did not think to forbid, which is the deny
 this language exists to refuse.
 
 **S17 · At most one escalation per trigger kind per limit, and `above` and `at least` are the
-same kind** (E310). A limit carrying both `escalate above 50.00 USDC` and `escalate at least
-50.00 USDC` has two thresholds meeting at a boundary and no defined composition on it. S15
+same kind** (E310). A limit carrying both `escalate above 50.00 USDC_circle` and `escalate at least
+50.00 USDC_circle` has two thresholds meeting at a boundary and no defined composition on it. S15
 states the rule; this fixes which triggers collide under it.
 
 **S18 · A prohibition MUST be reachable** (E317). A prohibition whose condition the compiler can
@@ -620,6 +642,37 @@ towards permitting, and it looks exactly like protection while providing none.
 > Note the deliberate asymmetry with S4. A prohibition may overlap anything, but it may not
 > overlap *nothing*. Overlap is composition, which is defined; unreachability is a mistake,
 > which is not.
+
+**S19 · An asset alias MUST NOT misrepresent what it binds.** The alias MUST begin with the
+`symbol` segment of the reference it binds, byte-for-byte and case-sensitively, and anything
+following it MUST begin with `_` (E211).
+
+> S7 verifies every segment of a reference against the resolver. Nothing verified the *name*,
+> which is the only part of the binding a reader sees at the point where money is actually
+> spent. `asset USDC = mint://USDT/Tether/<the real USDT mint>/solana:…` passes S7 — the
+> reference is internally consistent and matches the resolver in every segment — and then
+> `amount 100.00 USDC` spends Tether. Every part of that document is verified except the word a
+> reviewer reads.
+
+**S20 · An alias MUST NOT be exactly the symbol** (E212). It MUST carry a `_` and a non-empty
+qualifier: `USDC_circle`, `USDC_wormhole`, never bare `USDC`.
+
+> The rest of this specification is built on the claim that **a ticker is a label and a mint is
+> an identity** — that "USDC" names a string anyone can mint on Solana for a few cents, and only
+> the full reference names an asset. A document that declares `asset USDC = …` and then spends
+> `100.00 USDC` has, at every point where it matters, reintroduced the bare ticker as the
+> control. The declaration is explicit and twenty lines away; the twelve use sites read exactly
+> like the thing the language refuses to trust.
+>
+> This bites hardest where the two differ least. `asset USDC = mint://USDC/Wormhole/…` satisfies
+> S19 — the symbol really is USDC — and every limit then reads `100.00 USDC` while spending
+> bridged tokens. Requiring the qualifier means a reader cannot form the thought "this is USDC"
+> without also forming the thought "which USDC", and the second question is the one that has an
+> answer.
+>
+> The qualifier is the author's to choose and is not checked against the issuer. A meaningless
+> one is a readability failure, not a safety failure: S7 still pins every segment, and S19 still
+> prevents the name contradicting the symbol.
 
 **Emitted, not checked:** the static ceiling per limit per path (§9). A document whose bound
 cannot be computed does not compile.
@@ -756,7 +809,7 @@ window instance is identified by the wall-clock interval it covers, not by the c
 that created it. Installing a new charter version therefore re-points every limit at a new
 ceiling and leaves every accumulator exactly where it was.
 
-Consider a `100.00 USDC per fixed month` limit with `80.00` already reserved:
+Consider a `100.00 USDC_circle per fixed month` limit with `80.00` already reserved:
 
 | Edit | Result | Why this is the only safe answer |
 |---|---|---|
@@ -929,6 +982,8 @@ E2xx literal    201 unknown asset name            202 fractional digits exceed d
                 205 invalid calendar date         206 unknown timezone
                 207 malformed mcc                 208 malformed country
                 209 unknown tag                   210 duplicate declaration
+                211 alias contradicts its reference
+                212 alias is the bare symbol
 E3xx structure  301 operator not valid for field  302 heterogeneous group
                 303 group kind mismatch           304 overlapping exceptions
                 305 non-literal escalation ceiling 306 escalation below base

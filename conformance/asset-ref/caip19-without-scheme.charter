@@ -1,0 +1,11 @@
+# The same reference without the asset:// prefix. A parser MUST treat this and
+# caip19-with-scheme.charter as identical.
+charter caip19-input version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC_circle = solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day

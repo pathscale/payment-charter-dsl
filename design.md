@@ -75,7 +75,7 @@ change to the engine, reviewed, not something an author can do.
 charter acme-treasury version 7
 resolver common@41
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group trusted_suppliers = { 0xA1B2…, 0xC3D4… }
   group hardware          = { mcc:5045, mcc:5732 }
@@ -84,14 +84,14 @@ resolver common@41
   prohibit holiday_freeze when date after 2026-12-20 and date before 2027-01-02
 
   limit daily_spend
-    amount 500.00 USDC
-      except 5000.00 USDC when counterparty in trusted_suppliers
+    amount 500.00 USDC_circle
+      except 5000.00 USDC_circle when counterparty in trusted_suppliers
     per fixed day in Europe/London
     scope agent
-    above 200.00 USDC require 2 of finance
+    above 200.00 USDC_circle require 2 of finance
 
   limit burst
-    amount 100.00 USDC
+    amount 100.00 USDC_circle
     per rolling 5 minutes
     scope agent
 
@@ -101,8 +101,8 @@ resolver common@41
     scope agent
 
   limit untrusted_counterparty
-    amount 50.00 USDC
-      except 0 USDC when provenance is principal
+    amount 50.00 USDC_circle
+      except 0 USDC_circle when provenance is principal
     per rolling 24 hours
     scope counterparty
 ```
@@ -114,26 +114,58 @@ hardcoded field.
 
 ## Asset references
 
-### The ban is on undeclared tickers, not on short names
-
-`USDC` appears throughout the charter above, and that is fine, because **the document binds it
-in the document**:
-
-```
-asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
-```
+### A local binding is necessary, and it was not sufficient
 
 A bare ticker is the one thing in a charter that looks like a control and is not one. USDC
 exists on several chains under different mints, bridged and native variants both read as
 "USDC", and anyone can mint a token called USDC on Solana for a few cents. A charter saying
 `500 USDC` with no binding looks tight and admits an attacker's mint.
 
-A binding declared in the same file has none of that problem: the full reference is in the
-artefact, verbatim, and the short name is unambiguous within it. So the rule is narrow and
-absolute — **an alias must be declared in the document that uses it, and there is no global
-alias table, ever.** A global table is the hole; a local binding is just readability, and
-readability matters here because the controller and the auditor read the same file the engine
-compiled.
+So an alias MUST be declared in the document that uses it, and **there is no global alias table,
+ever**. A global table is the hole; a local binding puts the full reference in the artefact,
+verbatim, where the controller and the auditor read the same file the engine compiled.
+
+An earlier draft stopped there, and said a short name was then fine because the document bound
+it. That was wrong twice.
+
+**The binding was never checked against what it bound.** S7 verifies every segment of a
+reference against the resolver. Nothing verified the alias, which is the only part of the
+binding that appears where money is actually spent. So this compiled:
+
+```
+asset USDC = mint://USDT/Tether/<the real USDT mint>/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+```
+
+Internally consistent, resolver-verified in every segment, and every limit beneath it reading
+`100.00 USDC` while spending Tether. Every part of the document is checked except the word a
+reviewer reads. **S19** now requires an alias to begin with the symbol it binds.
+
+**And a correct binding still reintroduced the ticker.** This whole section argues that "USDC"
+names a label and only the full reference names an asset — and then the twelve places that
+actually move money said `100.00 USDC`, which reads exactly like the thing being refused. The
+declaration is explicit and twenty lines away; the use sites are not.
+
+It bites hardest where the two differ least. `asset USDC = mint://USDC/Wormhole/…` satisfies S19
+— the symbol really is USDC — and the charter still reads `100.00 USDC` throughout while
+spending bridged tokens. **S20** therefore forbids the alias from being the bare symbol:
+`USDC_circle`, `USDC_wormhole`, never `USDC`. A reader cannot form the thought "this is USDC"
+without also forming "which USDC", and that second question has an answer.
+
+### Why the reference is not simply repeated at every use site
+
+The maximally explicit answer is to inline the full reference wherever money appears and have no
+aliases at all. It is worse, and for a reason worth stating because it looks like the safe
+choice.
+
+A charter mentioning one asset twelve times would carry twelve independently mistypeable copies
+of a ninety-character string. Every one of those lines would exceed any reviewable width, and
+the canonical form forbids wrapping. Worst of all, the diff in which exactly one of the twelve
+copies changed — a single base58 character, in a wall of identical-looking references — is
+precisely the change a reviewer cannot see.
+
+Explicitness that a human cannot check is not explicitness. One binding, checked once against
+the resolver by S7, named by an alias that S19 and S20 prevent from lying, puts the verification
+where a machine does it and the reading where a human can do it.
 
 ### The reference
 
@@ -342,7 +374,7 @@ The engine's invariant says no execution releases signatures exceeding the chart
 over any window. That is only provable if "the charter's limits" names something finite, which
 this grammar guarantees by four restrictions:
 
-- **Exception values are literals.** `except 5000.00 USDC`, never `except (balance * 0.1)`.
+- **Exception values are literals.** `except 5000.00 USDC_circle`, never `except (balance * 0.1)`.
   So each limit's ceiling comes from a finite set written in the source, and the maximum it can
   ever resolve to is the largest literal — computable by reading the file.
 - **Conditions cannot reference accumulated state.** A condition selects *which* ceiling
@@ -409,7 +441,7 @@ why.
 ### Prohibition is a declaration, not a value
 
 `deny` was an exception value: `except deny when <condition>`, sitting in the same slot as
-`except 5000.00 USDC when …`. It is now `prohibit <name> when <condition>`, a document-level
+`except 5000.00 USDC_circle when …`. It is now `prohibit <name> when <condition>`, a document-level
 declaration.
 
 The slot was lying about its type. Every other inhabitant is a ceiling; `deny` is not one, and

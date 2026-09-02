@@ -4,13 +4,13 @@ charter overlap-ok version 1
 resolver common@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group trusted = { 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU }
 
   prohibit freeze when date after 2026-12-20 and date before 2027-01-02
 
   limit spend
-    amount 500.00 USDC
-      except 5000.00 USDC when counterparty in trusted
+    amount 500.00 USDC_circle
+      except 5000.00 USDC_circle when counterparty in trusted
     per fixed day

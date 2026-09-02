@@ -4,12 +4,12 @@ charter dead-prohibition-2 version 1
 resolver common@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group sanctioned = { country:PRK }
 
   prohibit never when category in sanctioned and not category in sanctioned
 
   limit spend
-    amount 100.00 USDC
+    amount 100.00 USDC_circle
     per fixed day

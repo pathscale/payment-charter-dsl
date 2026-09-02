@@ -1,0 +1,12 @@
+# CAIP-19 input, with the optional asset:// prefix. Normalises to the native
+# four-segment form with symbol and issuer filled from the resolver, so it
+# cannot fail S7. Emission is always the native form.
+charter caip19-input version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC_circle = asset://solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day

@@ -1,0 +1,12 @@
+# expect: E212
+# S20: an alias may not be the bare symbol. Every use site would read as a
+# ticker, which is the thing this language refuses to treat as a control.
+charter bare-ticker version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDC
+    per fixed day

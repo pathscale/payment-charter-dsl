@@ -5,9 +5,9 @@ charter stale-deny version 1
 resolver common@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   limit spend
-    amount 500.00 USDC
+    amount 500.00 USDC_circle
       except deny when date after 2026-12-20 and date before 2027-01-02
     per fixed day

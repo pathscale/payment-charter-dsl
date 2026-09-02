@@ -1,0 +1,12 @@
+# expect: E211
+# S19: the alias says USDC, the reference is Tether's. Every segment resolves
+# and S7 passes; the only thing wrong is the word a reviewer reads.
+charter lying-alias version 1
+resolver common@41
+timezone Europe/London
+
+  asset USDC_circle = mint://USDT/Tether/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  limit spend
+    amount 100.00 USDC_circle
+    per fixed day

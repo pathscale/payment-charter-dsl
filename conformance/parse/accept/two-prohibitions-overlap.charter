@@ -3,7 +3,7 @@ charter double-prohibit version 1
 resolver common@41
 timezone Europe/London
 
-  asset USDC = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+  asset USDC_circle = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
 
   group sanctioned = { country:PRK, country:IRN }
 
@@ -11,5 +11,5 @@ timezone Europe/London
   prohibit by_plane when provenance is at least merchant
 
   limit spend
-    amount 100.00 USDC
+    amount 100.00 USDC_circle
     per fixed day
