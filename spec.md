@@ -1709,6 +1709,7 @@ conformance/
   canonical/*.charter            + expected compiled bytes
   eval/*.json                    charter + request sequence → expected decisions
   asset-ref/                     the mint:// and unit:// sub-parser, on its own
+  type-table/                    §6's field × operator cross product, generated
   authenticity/                  signature, key, digest, version and validity cases (§12)
 ```
 

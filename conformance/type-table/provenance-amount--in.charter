@@ -1,0 +1,17 @@
+# Section 6: provenance.amount admits in.
+charter type-table version 1
+resolver full@41
+timezone UTC
+
+  asset USDC_solana = mint://USDC/Circle/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+
+  group addrs = { 9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM }
+  group cats = { mcc:5411 }
+  group countries = { country:PRK }
+
+  instrument visa_gold = card://visa/tok_g7h8i9
+
+  limit spend
+    amount 100.00 USDC_solana
+    for provenance.amount in { merchant }
+    per fixed day
