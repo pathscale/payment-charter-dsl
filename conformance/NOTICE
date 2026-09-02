@@ -1,0 +1,32 @@
+Payment Charter DSL — conformance corpus
+Copyright (c) 2026 PathScale Pte Ltd
+
+This product includes fixtures copied from, or derived from, the test suites of the
+projects below. Each such fixture carries a header in its leading comment block naming
+its source; this file is the index of those sources.
+
+Where a fixture is marked "Modified", it has been re-expressed in the Payment Charter
+DSL and its expected outcome restated in terms of this specification's error catalogue.
+
+---
+
+Catala
+  https://github.com/CatalaLang/catala
+  Copyright (c) Inria and the Catala contributors
+  Licensed under the Apache License, Version 2.0
+  Used from: tests/exception, tests/default, tests/date, tests/money, tests/dec, tests/bool
+
+Cedar
+  https://github.com/cedar-policy/cedar
+  Copyright (c) Cedar Contributors
+  Licensed under the Apache License, Version 2.0
+  Used from: cedar-integration-tests
+
+Open Policy Agent (Rego)
+  https://github.com/open-policy-agent/opa
+  Copyright (c) The OPA Authors
+  Licensed under the Apache License, Version 2.0
+
+---
+
+A copy of the Apache License, Version 2.0 is in ../LICENSE-APACHE.
